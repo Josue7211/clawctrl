@@ -931,10 +931,11 @@ export default function ChatPage() {
   useEffect(() => {
     const pendingProjectSelection = pendingProjectSelectionRef.current
     if (!pendingProjectSelection || !selectedProjectReady) return
-    if (findProjectByPathAndEnvironment([selectedProject], pendingProjectSelection.path, pendingProjectSelection.environmentId)) {
+    if (findProjectByPathAndEnvironment([selectedProject], pendingProjectSelection.path, pendingProjectSelection.environmentId)
+      && findProjectByRouteIdentity([selectedProject], projectIdParam, cwdParam, envParam)) {
       pendingProjectSelectionRef.current = null
     }
-  }, [selectedProject, selectedProjectReady])
+  }, [cwdParam, envParam, projectIdParam, selectedProject, selectedProjectReady])
 
   useEffect(() => {
     if (!workspaceContextReady) return
