@@ -5,9 +5,10 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Current next work: **R01 Protect development sessions**. No implementation package
-below is complete yet. The default first iOS workflow is creating, reading, and
-editing a note; quick capture in that release creates a note in the same vault.
+Next work: **R02 Execute backend tests in CI**. R01 is implemented and locally
+verified in [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64); merge and
+current CI status remain visible there. The default first iOS workflow is creating,
+reading, and editing a note; quick capture creates a note in the same vault.
 
 ## Working agreement
 
@@ -53,8 +54,8 @@ package available; record the exact prerequisite without marking the iOS work do
 
 | ID | Work package | Depends on | Status |
 | --- | --- | --- | --- |
-| R01 | Protect development sessions | None | Next |
-| R02 | Execute backend tests in CI | None | Planned |
+| R01 | Protect development sessions | None | Done |
+| R02 | Execute backend tests in CI | None | Next |
 | R03 | Produce isolated feature review evidence | None | Planned |
 | R04 | Define shared Notes API contracts | R01, R02 | Planned |
 | R05 | Define mobile connectivity and platform capabilities | R01, R04 | Planned |
@@ -89,8 +90,8 @@ package available; record the exact prerequisite without marking the iOS work do
 | I06 | Add selected native phone integrations | I04, Q01 | Planned |
 
 Status values are Next, Planned, Active, Waiting, and Done. While queued work
-remains, exactly one package is Next or Active. Done requires evidence recorded
-in the completion ledger below.
+remains, exactly one package is Next or Active. Done means implemented and verified in the linked PR, with evidence recorded
+in the completion ledger below; it does not imply the PR has merged.
 Waiting identifies a specific missing input and the independent package selected
 next. Requirements discovered during a package become explicit slices or follow-up
 work rather than silently broadening its PR.
@@ -112,7 +113,9 @@ milestone. Distant feature milestones are prioritized by daily value when activa
 
 ### R01 Protect development sessions
 
-**Owner:** `src-tauri/src/server.rs`, `src-tauri/src/secrets.rs`, `src-tauri/src/crypto.rs`, and `src-tauri/src/routes/auth.rs`.
+**Owner:** `src-tauri/src/session_persistence.rs`, `server.rs`, `secrets.rs`,
+`crypto.rs`, and `routes/auth.rs` under `src-tauri/src`. Lifecycle regressions live
+in `src-tauri/src/session_lifecycle_tests.rs`.
 
 **First slice:** remove raw serialization of development session tokens and the
 encryption key into SQLite. Reuse protected storage where appropriate and require
@@ -129,8 +132,9 @@ Linux secret-store-unavailable case, and verify the app login/restart flow.
 modules under `src-tauri/src`.
 
 **First slice:** inventory deterministic tests and live integration tests. Add a
-root command that executes the deterministic backend tests and run it in both CI
-platform jobs. Keep service-dependent certification separately identified.
+root command that executes the full deterministic backend suite and run it in both
+CI platform jobs. Expand beyond the targeted session-security gate introduced by
+R01. Keep service-dependent certification separately identified.
 
 **Done when:** CI reports executed Rust tests, a failing backend regression fails
 the job, and the deterministic suite works without personal service credentials.
@@ -333,13 +337,14 @@ The agent runs these existing commands from the repository root while working:
 | `npm run check` | Fast architecture, TypeScript, and dead-code validation |
 | `npm test -- src/features/notes` | Existing Notes behavior tests |
 | `npm test -- src/pages/__tests__/ChatPage.new-chat.test.tsx` | Chat selection and route regressions |
-| `npm run check:all` | Current full frontend/build/budget/Rust compilation gate; R02 extends it with executed backend tests |
+| `npm run test:sessions` | R01 backend persistence and authentication lifecycle regressions |
+| `npm run check:all` | Session-security tests plus the frontend/build/budget/Rust compilation gate; R02 expands execution to the full deterministic backend suite |
 
 For each package or named slice, record:
 
 1. The behavior changed, source revision, and PR link.
 2. Targeted test commands and actual results. Before handoff, run the current
-   complete checks; R02 adds executed backend tests to that gate.
+   complete checks; R02 expands the backend tests in that gate beyond R01 sessions.
 3. Live verification, a screenshot or recording link, and browser/native errors.
    Document-only changes use document/link checks without application tests.
 4. Real-device installation/update evidence for mobile delivery, and clean-install
@@ -351,7 +356,7 @@ For each package or named slice, record:
 
 | Package or slice | Revision and PR | Validation and review evidence | Remaining work |
 | --- | --- | --- | --- |
-| None yet | — | Packages above are planned | R01 is next |
+| R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). [Current macOS/Linux CI](https://github.com/Josue7211/clawctrl/pull/64/checks) was still running at handoff. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.

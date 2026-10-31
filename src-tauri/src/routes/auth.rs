@@ -137,6 +137,23 @@ fn epoch_secs() -> i64 {
         .as_secs() as i64
 }
 
+/// Account-key work can finish after logout or a different login. Apply its
+/// result only while the credentials that authorized it are still current.
+pub(crate) async fn update_current_session(
+    state: &AppState,
+    updated: &UserSession,
+) -> Result<(), AppError> {
+    let mut current = state.session.write().await;
+    if !current
+        .as_ref()
+        .is_some_and(|s| s.same_credentials(updated))
+    {
+        return Err(AppError::Unauthorized);
+    }
+    *current = Some(updated.clone());
+    Ok(())
+}
+
 fn account_sync_key_name(user_id: &str) -> String {
     format!("account-sync-key.{user_id}")
 }
@@ -1262,12 +1279,12 @@ async fn account_sync_recovery_unlock(
 
     cache_account_sync_key(&session.user_id, &account_key);
     session.encryption_key = account_key;
-    *state.session.write().await = Some(session.clone());
+    update_current_session(&state, &session).await?;
     promote_missing_keychain_secrets(&state, &session, &sb).await;
     load_user_secrets(&state, &session).await;
 
     #[cfg(debug_assertions)]
-    crate::server::save_dev_session(&state.db, &session).await;
+    crate::server::save_dev_session(&state, &session).await;
 
     if let Some(id) = row["id"].as_str() {
         let _ = sb
@@ -1527,12 +1544,12 @@ async fn account_sync_handoff_claim(
 
     cache_account_sync_key(&session.user_id, &account_key);
     session.encryption_key = account_key;
-    *state.session.write().await = Some(session.clone());
+    update_current_session(&state, &session).await?;
     promote_missing_keychain_secrets(&state, &session, &sb).await;
     load_user_secrets(&state, &session).await;
 
     #[cfg(debug_assertions)]
-    crate::server::save_dev_session(&state.db, &session).await;
+    crate::server::save_dev_session(&state, &session).await;
 
     let now = chrono::Utc::now().to_rfc3339();
     sb.update_as_user(
@@ -1570,7 +1587,7 @@ async fn account_sync_hydrate(
     if session.encryption_key.is_empty() {
         if let Some(key) = load_cached_account_sync_key(&session.user_id) {
             session.encryption_key = key;
-            *state.session.write().await = Some(session.clone());
+            update_current_session(&state, &session).await?;
         }
     }
 
@@ -1587,7 +1604,7 @@ async fn account_sync_hydrate(
     }
 
     #[cfg(debug_assertions)]
-    crate::server::save_dev_session(&state.db, &session).await;
+    crate::server::save_dev_session(&state, &session).await;
 
     Ok(Json(account_sync_status_payload(&state, &session).await))
 }
@@ -1615,7 +1632,7 @@ async fn account_sync_recover_local(
 
     cache_account_sync_key(&session.user_id, &account_key);
     session.encryption_key = account_key;
-    *state.session.write().await = Some(session.clone());
+    update_current_session(&state, &session).await?;
 
     let sb = SupabaseClient::from_state(&state)?;
     let mut count = 0usize;
@@ -1637,7 +1654,7 @@ async fn account_sync_recover_local(
     load_user_secrets(&state, &session).await;
 
     #[cfg(debug_assertions)]
-    crate::server::save_dev_session(&state.db, &session).await;
+    crate::server::save_dev_session(&state, &session).await;
 
     log_security_event(
         &state.db,
@@ -1695,13 +1712,13 @@ async fn account_sync_unlock(
     cache_account_sync_key(&session.user_id, encryption_key.as_ref());
     session.encryption_key = encryption_key.to_vec();
     drop(encryption_key);
-    *state.session.write().await = Some(session.clone());
+    update_current_session(&state, &session).await?;
 
     promote_missing_keychain_secrets(&state, &session, &sb).await;
     load_user_secrets(&state, &session).await;
 
     #[cfg(debug_assertions)]
-    crate::server::save_dev_session(&state.db, &session).await;
+    crate::server::save_dev_session(&state, &session).await;
 
     log_security_event(
         &state.db,
@@ -2683,7 +2700,14 @@ async fn login(
     // Drop the Zeroizing wrapper now — its copy is zeroed, the session
     // field is protected by UserSession's own Drop impl.
     drop(encryption_key);
-    *state.session.write().await = Some(session.clone());
+    {
+        let mut current = state.session.write().await;
+        crate::server::clear_dev_session(&state.db)
+            .await
+            .map_err(AppError::Internal)?;
+        *current = Some(session.clone());
+        *state.session_validated_at.write().await = 0;
+    }
 
     // NOTE: load_user_secrets is NOT called here — the session is pre-MFA
     // and the user has not yet verified their MFA factor. Secrets are loaded
@@ -2753,7 +2777,9 @@ async fn get_session(State(state): State<AppState>) -> Json<Value> {
         if s.mfa_verified && s.encryption_key.is_empty() {
             if let Some(key) = load_cached_account_sync_key(&s.user_id) {
                 s.encryption_key = key;
-                *state.session.write().await = Some(s.clone());
+                if update_current_session(&state, s).await.is_err() {
+                    return Json(json!({ "authenticated": false }));
+                }
                 load_user_secrets(&state, s).await;
             }
         }
@@ -2810,12 +2836,26 @@ async fn get_session(State(state): State<AppState>) -> Json<Value> {
 // POST /auth/logout
 // ---------------------------------------------------------------------------
 
-async fn logout(State(state): State<AppState>) -> Json<Value> {
-    let session = state.session.read().await.clone();
+async fn logout(State(state): State<AppState>) -> Result<Json<Value>, AppError> {
+    let session = {
+        // Serialize with token refresh and retire persistence before reporting success.
+        let _guard = state.refresh_mutex.lock().await;
+        let mut current = state.session.write().await;
+        let session = current.take();
+        *state.session_validated_at.write().await = 0;
+        crate::server::clear_dev_session(&state.db)
+            .await
+            .map_err(|_| {
+                AppError::Internal(anyhow::anyhow!(
+                    "could not clear saved authentication session"
+                ))
+            })?;
+        session
+    };
     if let Some(sess) = session {
         if let Ok(gotrue) = GoTrueClient::from_state(&state) {
-            if let Err(e) = gotrue.sign_out(&sess.access_token).await {
-                tracing::warn!("gotrue sign_out failed (non-fatal): {e}");
+            if gotrue.sign_out(&sess.access_token).await.is_err() {
+                tracing::warn!("upstream sign-out unavailable; local session cleared");
             }
         }
         // Clear cached API responses for this user to prevent data leakage
@@ -2826,8 +2866,7 @@ async fn logout(State(state): State<AppState>) -> Json<Value> {
             .await;
         tracing::info!(user_id = %sess.user_id, "user logged out");
     }
-    *state.session.write().await = None;
-    Json(json!({ "ok": true }))
+    Ok(Json(json!({ "ok": true })))
 }
 
 // ---------------------------------------------------------------------------
@@ -2842,56 +2881,50 @@ async fn refresh(State(state): State<AppState>) -> Result<Json<Value>, AppError>
         .clone()
         .ok_or(AppError::Unauthorized)?;
 
-    // Hard 24-hour session lifetime — force re-authentication
-    if epoch_secs() - session.created_at > 86400 {
-        tracing::info!(user_id = %session.user_id, "session exceeded 24h lifetime — forcing re-auth");
-        *state.session.write().await = None;
-        return Err(AppError::Unauthorized);
-    }
-
     // Serialise refresh attempts so concurrent requests don't all hit GoTrue
     let _guard = state.refresh_mutex.lock().await;
 
-    // Re-check after acquiring the lock — another request may have refreshed already
+    // Never revive a snapshot captured before logout or a different login.
+    let current = state
+        .session
+        .read()
+        .await
+        .clone()
+        .ok_or(AppError::Unauthorized)?;
+    if current.user_id != session.user_id || current.created_at != session.created_at {
+        return Err(AppError::Unauthorized);
+    }
+    let age = epoch_secs().checked_sub(current.created_at);
+    if !age.is_some_and(|age| (0..86_400).contains(&age)) {
+        let mut write = state.session.write().await;
+        if write.as_ref().is_some_and(|s| s.same_credentials(&current)) {
+            *write = None;
+            *state.session_validated_at.write().await = 0;
+            crate::server::clear_dev_session(&state.db)
+                .await
+                .map_err(AppError::Internal)?;
+        }
+        return Err(AppError::Unauthorized);
+    }
+    if !current.same_credentials(&session) {
+        return Ok(Json(json!({ "ok": true })));
+    }
+
+    if crate::server::refresh_session_tokens(&state, &current)
+        .await
+        .is_err()
     {
-        let current = state.session.read().await;
-        if let Some(ref s) = *current {
-            if s.expires_at > session.expires_at {
-                // Already refreshed by another concurrent request
-                return Ok(Json(json!({ "ok": true })));
-            }
+        let mut write = state.session.write().await;
+        if write.as_ref().is_some_and(|s| s.same_credentials(&current)) {
+            *write = None;
+            *state.session_validated_at.write().await = 0;
+            crate::server::clear_dev_session(&state.db)
+                .await
+                .map_err(AppError::Internal)?;
         }
+        tracing::warn!("session refresh rejected or unavailable; sign in again");
+        return Err(AppError::Unauthorized);
     }
-
-    let gotrue = GoTrueClient::from_state(&state).map_err(AppError::Internal)?;
-
-    let auth = match gotrue.refresh_token(&session.refresh_token).await {
-        Ok(auth) => auth,
-        Err(err) => {
-            tracing::warn!(user_id = %session.user_id, "session refresh failed; clearing restored session: {err}");
-            *state.session.write().await = None;
-            crate::server::clear_dev_session(&state.db).await;
-            return Err(AppError::Unauthorized);
-        }
-    };
-
-    let now = epoch_secs();
-
-    let mut write = state.session.write().await;
-    if let Some(ref mut s) = *write {
-        s.access_token = auth.access_token;
-        s.refresh_token = auth.refresh_token;
-        s.expires_at = now + auth.expires_in;
-    }
-    let updated_session = write.clone();
-    drop(write);
-
-    if let Some(ref session) = updated_session {
-        #[cfg(debug_assertions)]
-        crate::server::save_dev_session(&state.db, session).await;
-    }
-
-    tracing::debug!("session refreshed, expires_at={}", now + auth.expires_in);
 
     Ok(Json(json!({ "ok": true })))
 }
@@ -3451,9 +3484,9 @@ async fn mfa_verify(
     if let Some(ref sess) = upgraded_session {
         load_user_secrets(&state, sess).await;
 
-        // In dev mode, persist session to SQLite so it survives restarts
+        // In dev mode, persist the current session with OS-backed encryption
         #[cfg(debug_assertions)]
-        crate::server::save_dev_session(&state.db, sess).await;
+        crate::server::save_dev_session(&state, sess).await;
     }
 
     Ok(Json(json!({ "ok": true })))
@@ -3706,7 +3739,7 @@ async fn get_tauri_session(
                                 clear_pending_oauth_snapshot().await;
                                 load_user_secrets(&state, &session).await;
                                 #[cfg(debug_assertions)]
-                                crate::server::save_dev_session(&state.db, &session).await;
+                                crate::server::save_dev_session(&state, &session).await;
                                 log_security_event(
                                     &state.db,
                                     "oauth_login",
@@ -4018,7 +4051,7 @@ async fn oauth_callback(
                             // password-derived key).
                             load_user_secrets(&state, &session).await;
                             #[cfg(debug_assertions)]
-                            crate::server::save_dev_session(&state.db, &session).await;
+                            crate::server::save_dev_session(&state, &session).await;
 
                             log_security_event(
                                 &state.db,

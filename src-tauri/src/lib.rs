@@ -14,6 +14,7 @@ pub mod routes;
 pub mod secrets;
 pub mod server;
 pub mod service_client;
+pub(crate) mod session_persistence;
 pub mod supabase;
 pub mod sync;
 pub mod tailscale;

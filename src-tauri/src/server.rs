@@ -40,7 +40,7 @@ use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 /// Populated after login/OAuth and auto-refreshed by the `inject_session`
 /// middleware when the access token is near expiry. Route handlers that require
 /// authentication extract this via the [`RequireAuth`] extractor.
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct UserSession {
     pub access_token: String,
     pub refresh_token: String,
@@ -98,36 +98,40 @@ impl Drop for UserSession {
     }
 }
 
-/// In debug mode, persist the session to SQLite so it survives app restarts.
+impl UserSession {
+    pub(crate) fn same_credentials(&self, other: &Self) -> bool {
+        self.user_id == other.user_id
+            && self.created_at == other.created_at
+            && self.access_token == other.access_token
+            && self.refresh_token == other.refresh_token
+    }
+}
+
+/// In debug mode, persist only the current snapshot using OS-backed encryption.
 #[cfg(debug_assertions)]
-pub async fn save_dev_session(db: &sqlx::SqlitePool, session: &UserSession) {
-    if let Ok(data) = serde_json::to_string(session) {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
-        let _ = sqlx::query(
-            "INSERT OR REPLACE INTO _dev_session (id, data, created_at) VALUES (1, ?, ?)",
-        )
-        .bind(&data)
-        .bind(now)
-        .execute(db)
-        .await;
+pub async fn save_dev_session(state: &AppState, session: &UserSession) {
+    // Hold the read lock until persistence finishes. Logout takes the write lock
+    // before clearing persistence, so an in-flight save cannot resurrect it.
+    let current = state.session.read().await;
+    if current.as_ref() != Some(session) {
+        return;
+    }
+    if crate::session_persistence::save(&state.db, session)
+        .await
+        .is_err()
+    {
+        tracing::warn!("development session was not saved; sign in again after restart");
     }
 }
 
 /// Clear the persisted debug session when the restored Supabase tokens are no
 /// longer accepted. Without this, `cargo tauri dev` can keep resurrecting a
 /// stale JWT and every synced route will repeatedly fail with 401s.
-#[cfg(debug_assertions)]
-pub async fn clear_dev_session(db: &sqlx::SqlitePool) {
-    let _ = sqlx::query("DELETE FROM _dev_session").execute(db).await;
+pub async fn clear_dev_session(db: &sqlx::SqlitePool) -> anyhow::Result<()> {
+    crate::session_persistence::clear(db).await
 }
 
-#[cfg(not(debug_assertions))]
-pub async fn clear_dev_session(_db: &sqlx::SqlitePool) {}
-
-fn epoch_secs() -> i64 {
+pub(crate) fn epoch_secs() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -143,24 +147,42 @@ fn is_invalid_auth_error(err: &anyhow::Error) -> bool {
         || msg.contains("jwt")
 }
 
-async fn clear_session(state: &AppState, user_id: &str, reason: &str) {
-    tracing::warn!(user_id = %user_id, reason = %reason, "clearing invalid Supabase session");
-    *state.session.write().await = None;
+async fn clear_session(state: &AppState, session: &UserSession, reason: &str) {
+    let mut current = state.session.write().await;
+    if !current
+        .as_ref()
+        .is_some_and(|s| s.same_credentials(session))
+    {
+        return;
+    }
+    tracing::warn!(reason = %reason, "clearing invalid authentication session");
+    *current = None;
     *state.session_validated_at.write().await = 0;
-    state.cache_clear_user(user_id).await;
-    clear_dev_session(&state.db).await;
+    if clear_dev_session(&state.db).await.is_err() {
+        tracing::error!("could not clear development session persistence");
+    }
+    drop(current);
+    state.cache_clear_user(&session.user_id).await;
 }
 
-async fn refresh_session_tokens(
+pub(crate) async fn refresh_session_tokens(
     state: &AppState,
     session: &UserSession,
 ) -> anyhow::Result<UserSession> {
     let gotrue = crate::gotrue::GoTrueClient::from_state(state)?;
     let auth_resp = gotrue.refresh_token(&session.refresh_token).await?;
+    anyhow::ensure!(
+        auth_resp.user["id"].as_str() == Some(session.user_id.as_str()),
+        "invalid authentication subject"
+    );
     let now = epoch_secs();
 
     let mut write = state.session.write().await;
-    let mut refreshed = session.clone();
+    let current = write
+        .as_ref()
+        .filter(|s| s.same_credentials(session))
+        .ok_or_else(|| anyhow::anyhow!("session changed while refreshing"))?;
+    let mut refreshed = current.clone();
     refreshed.access_token = auth_resp.access_token;
     refreshed.refresh_token = auth_resp.refresh_token;
     refreshed.expires_at = now + auth_resp.expires_in;
@@ -169,10 +191,45 @@ async fn refresh_session_tokens(
     drop(write);
 
     #[cfg(debug_assertions)]
-    save_dev_session(&state.db, &refreshed).await;
+    save_dev_session(state, &refreshed).await;
 
     *state.session_validated_at.write().await = now;
     Ok(refreshed)
+}
+
+/// Restored credentials must be verified before background work or HTTP requests
+/// can use them. A network failure during this first validation requires login.
+#[cfg(debug_assertions)]
+async fn validate_restored_session(state: &AppState) {
+    let _guard = state.refresh_mutex.lock().await;
+    let Some(session) = state.session.read().await.clone() else {
+        return;
+    };
+    let verified = tokio::time::timeout(Duration::from_secs(5), async {
+        let gotrue = crate::gotrue::GoTrueClient::from_state(state)?;
+        match gotrue.get_user(&session.access_token).await {
+            Ok(user) => {
+                anyhow::ensure!(
+                    user["id"].as_str() == Some(session.user_id.as_str()),
+                    "invalid authentication subject"
+                );
+            }
+            Err(err) if is_invalid_auth_error(&err) => {
+                refresh_session_tokens(state, &session).await?;
+            }
+            Err(_) => anyhow::bail!("restored session could not be verified"),
+        }
+        Ok::<_, anyhow::Error>(())
+    })
+    .await;
+    if matches!(verified, Ok(Ok(()))) {
+        *state.session_validated_at.write().await = epoch_secs();
+    } else {
+        let current = state.session.read().await.clone();
+        if let Some(current) = current {
+            clear_session(state, &current, "restored session could not be verified").await;
+        }
+    }
 }
 
 /// Ensure the restored desktop session still has a valid Supabase token.
@@ -187,8 +244,11 @@ pub async fn ensure_session_valid(state: &AppState) -> bool {
     };
 
     let now = epoch_secs();
-    if now - session.created_at > 86400 {
-        clear_session(state, &session.user_id, "session lifetime exceeded").await;
+    if !now
+        .checked_sub(session.created_at)
+        .is_some_and(|age| (0..86_400).contains(&age))
+    {
+        clear_session(state, &session, "session lifetime exceeded").await;
         return false;
     }
 
@@ -206,8 +266,11 @@ pub async fn ensure_session_valid(state: &AppState) -> bool {
     };
 
     let now = epoch_secs();
-    if now - current.created_at > 86400 {
-        clear_session(state, &current.user_id, "session lifetime exceeded").await;
+    if !now
+        .checked_sub(current.created_at)
+        .is_some_and(|age| (0..86_400).contains(&age))
+    {
+        clear_session(state, &current, "session lifetime exceeded").await;
         return false;
     }
 
@@ -215,11 +278,11 @@ pub async fn ensure_session_valid(state: &AppState) -> bool {
         match refresh_session_tokens(state, &current).await {
             Ok(_) => return true,
             Err(err) if is_invalid_auth_error(&err) => {
-                clear_session(state, &current.user_id, "refresh rejected").await;
+                clear_session(state, &current, "refresh rejected").await;
                 return false;
             }
-            Err(err) => {
-                tracing::warn!("token refresh failed; keeping session for retry: {err}");
+            Err(_) => {
+                tracing::warn!("token refresh failed; keeping live session for retry");
                 return true;
             }
         }
@@ -231,8 +294,8 @@ pub async fn ensure_session_valid(state: &AppState) -> bool {
 
     let gotrue = match crate::gotrue::GoTrueClient::from_state(state) {
         Ok(gotrue) => gotrue,
-        Err(err) => {
-            tracing::warn!("cannot validate Supabase session: {err}");
+        Err(_) => {
+            tracing::warn!("cannot validate live authentication session");
             return true;
         }
     };
@@ -243,27 +306,31 @@ pub async fn ensure_session_valid(state: &AppState) -> bool {
     )
     .await
     {
-        Ok(Ok(_)) => {
+        Ok(Ok(user)) if user["id"].as_str() == Some(current.user_id.as_str()) => {
             *state.session_validated_at.write().await = now;
             true
+        }
+        Ok(Ok(_)) => {
+            clear_session(state, &current, "authentication subject mismatch").await;
+            false
         }
         Ok(Err(err)) if is_invalid_auth_error(&err) => {
             match refresh_session_tokens(state, &current).await {
                 Ok(_) => true,
                 Err(refresh_err) if is_invalid_auth_error(&refresh_err) => {
-                    clear_session(state, &current.user_id, "access and refresh rejected").await;
+                    clear_session(state, &current, "access and refresh rejected").await;
                     false
                 }
-                Err(refresh_err) => {
+                Err(_) => {
                     tracing::warn!(
-                        "Supabase session validation failed and refresh could not complete; keeping session for retry: {refresh_err}"
+                        "session validation and refresh unavailable; keeping live session for retry"
                     );
                     true
                 }
             }
         }
-        Ok(Err(err)) => {
-            tracing::warn!("Supabase session validation failed; keeping session for retry: {err}");
+        Ok(Err(_)) => {
+            tracing::warn!("session validation unavailable; keeping live session for retry");
             true
         }
         Err(_) => {
@@ -774,49 +841,13 @@ pub async fn start(
 
     let db = crate::db::init().await?;
 
-    // In debug mode, restore the previous session from SQLite so you don't
-    // have to re-login every time cargo tauri dev restarts.
+    crate::session_persistence::initialize(&db).await?;
     #[cfg(debug_assertions)]
-    let restored_session = {
-        sqlx::query("CREATE TABLE IF NOT EXISTS _dev_session (id INTEGER PRIMARY KEY, data TEXT NOT NULL, created_at INTEGER NOT NULL)")
-            .execute(&db).await.ok();
-        let row: Option<(String, i64)> =
-            sqlx::query_as("SELECT data, created_at FROM _dev_session WHERE id = 1")
-                .fetch_optional(&db)
-                .await
-                .unwrap_or(None);
-        match row {
-            Some((data, created_at)) => {
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_secs() as i64;
-                // Only restore if less than 24 hours old
-                if now - created_at < 86400 {
-                    match serde_json::from_str::<UserSession>(&data) {
-                        Ok(sess) => {
-                            tracing::info!(user_id = %sess.user_id, "dev session restored from SQLite");
-                            Some(sess)
-                        }
-                        Err(_) => None,
-                    }
-                } else {
-                    tracing::info!("dev session expired (>24h) — login required");
-                    sqlx::query("DELETE FROM _dev_session")
-                        .execute(&db)
-                        .await
-                        .ok();
-                    None
-                }
-            }
-            None => None,
-        }
-    };
+    let restored_session = crate::session_persistence::restore(&db).await?;
     #[cfg(not(debug_assertions))]
     let restored_session: Option<UserSession> = None;
-
     #[cfg(debug_assertions)]
-    let restored_session = restored_session;
+    let has_restored_session = restored_session.is_some();
 
     // Create gateway WS client if a compatible harness is configured.
     let gateway_ws = harness
@@ -839,6 +870,11 @@ pub async fn start(
         session_validated_at: Arc::new(RwLock::new(0)),
         pending_oauth: Arc::new(RwLock::new(None)),
     };
+
+    #[cfg(debug_assertions)]
+    if has_restored_session {
+        validate_restored_session(&state).await;
+    }
 
     // Log runtime integrity checks to security_events (fire-and-forget).
     // These mirror the tracing warnings emitted in main.rs but persist in SQLite
@@ -1630,6 +1666,10 @@ async fn db_cleanup(db: &sqlx::SqlitePool) {
         _ => {}
     }
 }
+
+#[cfg(all(test, debug_assertions))]
+#[path = "session_lifecycle_tests.rs"]
+mod session_lifecycle_tests;
 
 #[cfg(test)]
 mod tests {
