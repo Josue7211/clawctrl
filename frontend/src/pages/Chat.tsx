@@ -982,7 +982,8 @@ export default function ChatPage() {
     workspaceContextReady,
   ])
 
-  useEffect(() => {
+  // Finish URL synchronization before another navigation can overtake this render.
+  useLayoutEffect(() => {
     if (!workspaceContextReady) return
     const explicitProjectRouteRequested = Boolean(projectIdParam?.trim() || cwdParam?.trim())
     const selectedSessionProject = selectedSession && !newChatRequested
