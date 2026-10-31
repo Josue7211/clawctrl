@@ -982,10 +982,7 @@ mod tests {
             parsed.chat_primary_model.as_deref(),
             Some("openai-codex/gpt-5.2-codex")
         );
-        assert_eq!(
-            parsed.heartbeat_model.as_deref(),
-            Some("gpt-5.4-mini")
-        );
+        assert_eq!(parsed.heartbeat_model.as_deref(), Some("gpt-5.4-mini"));
         assert_eq!(
             parsed.favorite_models,
             Some(vec![

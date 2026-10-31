@@ -25,7 +25,8 @@ particular drive or mount path is required. `clawctrl` is the product identity.
 
 Install Node.js 24 LTS and Rust stable, plus the
 [Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/) for your
-OS. macOS desktop development only needs Xcode Command Line Tools. iOS builds
+OS. Install the Rust check tools with `rustup component add rustfmt clippy`.
+macOS desktop development only needs Xcode Command Line Tools. iOS builds
 require full Xcode and a configured mobile app target; the commands below launch
 the existing desktop app.
 
@@ -49,11 +50,14 @@ npm run build
 ```
 
 `check` runs architecture, TypeScript, and dead-code checks without requiring a
-production build. `check:all` also executes the backend session-security tests,
-runs the frontend tests, builds the frontend,
-checks its bundle budget, and checks the Rust desktop binary. CI runs that same
+production build. `test:backend` executes the complete deterministic Rust suite,
+including session security. `check:rust` checks Rust formatting and runs Clippy
+with correctness and suspicious lints treated as errors. `check:all` runs those
+checks, both test suites, the frontend build and bundle budget, and Rust desktop
+compilation. CI runs that same
 full command on macOS and Linux. `build` creates the desktop release for the OS
-you are using.
+you are using. See [backend verification](docs/backend-testing.md) for the test
+inventory, environment isolation, opt-in checks, and CI caching.
 
 `frontend:dev` remains available for browser diagnostics. The normal development
 entry point is `dev`, so native APIs and the local backend are present.

@@ -142,9 +142,15 @@ fn detect_shell() -> String {
 /// Build a sanitized environment for the PTY child process.
 /// Uses a whitelist approach: only PTY_SAFE_ENV_VARS are forwarded.
 fn build_sanitized_env() -> Vec<(String, String)> {
+    build_sanitized_env_with(|key| std::env::var(key).ok())
+}
+
+fn build_sanitized_env_with(
+    mut lookup: impl FnMut(&str) -> Option<String>,
+) -> Vec<(String, String)> {
     let mut env = Vec::new();
     for key in PTY_SAFE_ENV_VARS {
-        if let Ok(val) = std::env::var(key) {
+        if let Some(val) = lookup(key) {
             env.push((key.to_string(), val));
         }
     }
@@ -720,14 +726,12 @@ mod tests {
 
     #[test]
     fn test_env_sanitization() {
-        // Set a fake secret env var to verify it does NOT leak
-        unsafe {
-            std::env::set_var("MC_TEST_SECRET", "hunter2");
-            std::env::set_var("SUPABASE_TEST_KEY", "secret123");
-            std::env::set_var("HOME", "/test/home");
-        }
-
-        let env = build_sanitized_env();
+        let fixture = std::collections::HashMap::from([
+            ("MC_TEST_SECRET", "fixture-secret"),
+            ("SUPABASE_TEST_KEY", "fixture-key"),
+            ("HOME", "/fixture/home"),
+        ]);
+        let env = build_sanitized_env_with(|key| fixture.get(key).map(|value| value.to_string()));
 
         // Verify no blocked prefix vars are present
         for (key, _) in &env {
@@ -747,15 +751,9 @@ mod tests {
             "TERM must be xterm-256color"
         );
 
-        // Verify HOME is forwarded (we set it above)
+        // A fixture lookup proves forwarding without modifying the process HOME.
         let home = env.iter().find(|(k, _)| k == "HOME");
-        assert!(home.is_some(), "HOME should be present in sanitized env");
-
-        // Cleanup
-        unsafe {
-            std::env::remove_var("MC_TEST_SECRET");
-            std::env::remove_var("SUPABASE_TEST_KEY");
-        }
+        assert_eq!(home.map(|(_, value)| value.as_str()), Some("/fixture/home"));
     }
 
     #[test]

@@ -5,10 +5,10 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Next work: **R02 Execute backend tests in CI**. R01 is implemented and locally
-verified in [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64); merge and
-current CI status remain visible there. The default first iOS workflow is creating,
-reading, and editing a note; quick capture creates a note in the same vault.
+Next work: **R03 Produce isolated feature review evidence**. R01 and R02 are
+implemented and verified in their linked PRs; the completion ledger records CI
+and review evidence. The default first iOS workflow is creating, reading, and
+editing a note; quick capture creates a note in the same vault.
 
 ## Working agreement
 
@@ -55,8 +55,8 @@ package available; record the exact prerequisite without marking the iOS work do
 | ID | Work package | Depends on | Status |
 | --- | --- | --- | --- |
 | R01 | Protect development sessions | None | Done |
-| R02 | Execute backend tests in CI | None | Next |
-| R03 | Produce isolated feature review evidence | None | Planned |
+| R02 | Execute backend tests in CI | None | Done |
+| R03 | Produce isolated feature review evidence | None | Next |
 | R04 | Define shared Notes API contracts | R01, R02 | Planned |
 | R05 | Define mobile connectivity and platform capabilities | R01, R04 | Planned |
 | I01 | Select and prove the native client foundation | R03 | Planned |
@@ -128,8 +128,8 @@ Linux secret-store-unavailable case, and verify the app login/restart flow.
 
 ### R02 Execute backend tests in CI
 
-**Owner:** `package.json`, `.github/workflows/checks.yml`, and existing Rust test
-modules under `src-tauri/src`.
+**Owner:** `package.json`, `.github/workflows/checks.yml`, `docs/backend-testing.md`,
+and existing Rust test modules under `src-tauri/src`.
 
 **First slice:** inventory deterministic tests and live integration tests. Add a
 root command that executes the full deterministic backend suite and run it in both
@@ -337,14 +337,16 @@ The agent runs these existing commands from the repository root while working:
 | `npm run check` | Fast architecture, TypeScript, and dead-code validation |
 | `npm test -- src/features/notes` | Existing Notes behavior tests |
 | `npm test -- src/pages/__tests__/ChatPage.new-chat.test.tsx` | Chat selection and route regressions |
-| `npm run test:sessions` | R01 backend persistence and authentication lifecycle regressions |
-| `npm run check:all` | Session-security tests plus the frontend/build/budget/Rust compilation gate; R02 expands execution to the full deterministic backend suite |
+| `npm run test:sessions` | Focused R01 persistence and authentication regressions |
+| `npm run test:backend` | Complete ordinary Rust suite across all targets; serial process-environment fixtures |
+| `npm run check:rust` | Full Rust formatting and correctness/suspicious Clippy gates |
+| `npm run check:all` | Rust checks, the backend/frontend suites, production build, bundle budget, and Rust desktop compilation |
 
 For each package or named slice, record:
 
 1. The behavior changed, source revision, and PR link.
 2. Targeted test commands and actual results. Before handoff, run the current
-   complete checks; R02 expands the backend tests in that gate beyond R01 sessions.
+   complete checks; R02's full ordinary backend suite is part of that gate.
 3. Live verification, a screenshot or recording link, and browser/native errors.
    Document-only changes use document/link checks without application tests.
 4. Real-device installation/update evidence for mobile delivery, and clean-install
@@ -356,7 +358,9 @@ For each package or named slice, record:
 
 | Package or slice | Revision and PR | Validation and review evidence | Remaining work |
 | --- | --- | --- | --- |
-| R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). [Current macOS/Linux CI](https://github.com/Josue7211/clawctrl/pull/64/checks) was still running at handoff. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
+| R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). macOS/Linux CI passed in [run 41245943921](https://github.com/Josue7211/clawctrl/actions/runs/41245943921) at `c932af1`. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
+
+| R02 | `47f2e4a`; [draft PR 65](https://github.com/Josue7211/clawctrl/pull/65), stacked on PR 64 | Full local gate and [macOS/Linux CI](https://github.com/Josue7211/clawctrl/actions/runs/41249725389) passed: 722 backend and 4,145 frontend tests per platform, formatting, selected Clippy gates, build/budget/type/architecture/dead-code/Rust checks. Earlier backend failures propagated exit 101. Both platform caches saved. Live browser smoke: zero errors. [Review evidence](reviews/r02-backend-ci.md); [test inventory](backend-testing.md). | Two explicit opt-ins remain separate; style/performance lint warnings remain visible. Cache reuse follows branch/ref scope; warm-run timings unmeasured. No new data migration. R03 is next. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.

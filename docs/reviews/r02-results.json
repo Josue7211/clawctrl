@@ -1,0 +1,74 @@
+{
+  "errors": [],
+  "authCalls": [
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": true
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": true
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": true
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": true
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": true
+    },
+    {
+      "path": "/api/auth/logout",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    },
+    {
+      "path": "/api/auth/session",
+      "status": 200,
+      "authenticated": false
+    }
+  ]
+}

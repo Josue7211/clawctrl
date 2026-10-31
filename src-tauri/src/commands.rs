@@ -2971,7 +2971,10 @@ mod tests {
 
         let added = add_chat_workspace_project(repo.to_string_lossy().into_owned())
             .expect("native add should store project");
-        assert_eq!(added.project.path.as_str(), repo.to_string_lossy().as_ref());
+        assert_eq!(
+            added.project.path.as_str(),
+            repo.canonicalize().unwrap().to_string_lossy().as_ref()
+        );
         assert_eq!(added.projects.len(), 1);
 
         let updated = update_chat_workspace_project(
