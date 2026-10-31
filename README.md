@@ -4,9 +4,11 @@ clawctrl is the local-first desktop control plane for the homelab, Hermes,
 memd, agent sessions, notes, reminders, Proxmox, Portainer, and related personal
 operations.
 
-Development targets macOS and Linux. Use this Git repository as the source of
-truth and one local checkout on each machine. No particular drive or mount path
-is required. `clawctrl` is the product identity.
+The primary desktop targets are macOS and Linux. A viable iOS app is also a
+product requirement, currently unimplemented; see the iOS milestones in the
+[feature map](docs/features.md#ios-app-required-not-yet-implemented). Use this Git
+repository as the source of truth and one local checkout on each machine. No
+particular drive or mount path is required. `clawctrl` is the product identity.
 
 ## Active Surface
 
@@ -23,8 +25,9 @@ is required. `clawctrl` is the product identity.
 
 Install Node.js 24 LTS and Rust stable, plus the
 [Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/) for your
-OS. macOS desktop development only needs Xcode Command Line Tools; iPhone
-development is outside the current scope.
+OS. macOS desktop development only needs Xcode Command Line Tools. iOS builds
+require full Xcode and a configured mobile app target; the commands below launch
+the existing desktop app.
 
 ```bash
 npm run setup
