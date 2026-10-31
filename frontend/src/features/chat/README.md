@@ -30,3 +30,5 @@ picking, clearing, and explicit project navigation in the running app.
 The page remains large. Move orchestration into focused feature hooks one behavior
 at a time, keeping the existing route and selection contract. The directory map
 above describes current ownership; Chat has not yet been fully consolidated.
+Execute the next extractions through C01 and C02 in the repository
+[implementation map](../../../../docs/implementation-map.md#desktop-ownership-packages).

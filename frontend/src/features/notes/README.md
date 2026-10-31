@@ -49,5 +49,7 @@ without connecting to personal services.
 - Kept the public page entry point and existing runtime contracts.
 - The workspace hook still needs smaller hooks for sync, review, and workspace
   persistence; do those as separate behavior-preserving changes.
+- Execute those changes through packages N01, N02, and N03 in the repository
+  [implementation map](../../../../docs/implementation-map.md#desktop-ownership-packages).
 - Continue the existing feature acceptance work in `docs/notes-parity-roadmap.md`.
   This organization change does not declare all Notes parity complete.

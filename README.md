@@ -5,8 +5,8 @@ memd, agent sessions, notes, reminders, Proxmox, Portainer, and related personal
 operations.
 
 The primary desktop targets are macOS and Linux. A viable iOS app is also a
-product requirement, currently unimplemented; see the iOS milestones in the
-[feature map](docs/features.md#ios-app-required-not-yet-implemented). Use this Git
+product requirement, currently unimplemented; see the iOS work packages in the
+[implementation map](docs/implementation-map.md#ios-packages). Use this Git
 repository as the source of truth and one local checkout on each machine. No
 particular drive or mount path is required. `clawctrl` is the product identity.
 
@@ -59,11 +59,13 @@ entry point is `dev`, so native APIs and the local backend are present.
 
 ## Work on one feature
 
-Start with the [feature map](docs/features.md), then read the feature's README.
-Define one visible behavior and its acceptance check. Implement it in the
-existing feature, try it in the running app, and run its existing tests before
+Select the next package from the [implementation map](docs/implementation-map.md),
+locate its existing owners in the [feature map](docs/features.md), then read the
+feature's README. Define one visible behavior and its acceptance check. Implement
+it in the existing feature, try it in the running app, and run its existing tests before
 the full checks. Record unfinished work in that feature's README or existing
-roadmap. Finish the current feature before starting another.
+roadmap and record completion in the implementation map. Finish the current
+package's acceptance check before selecting another.
 
 Notes is the first consolidated feature: its UI, state, storage, and tests live
 in `frontend/src/features/notes/`. The page under `pages/notes/` only connects the
@@ -80,6 +82,7 @@ one at a time; the map identifies those locations.
 
 ## Docs
 
+- [Implementation map and next work](docs/implementation-map.md)
 - [Feature map](docs/features.md)
 - [Architecture](docs/architecture.md)
 - [Repo baseline](docs/repo-baseline.md)
