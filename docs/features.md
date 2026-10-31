@@ -70,6 +70,45 @@ against the intended backend, survives restart and connection loss without losin
 local edits, and can receive the next verified build. A simulator screenshot or
 successful compilation alone does not establish viability.
 
+## Systema patterns to adapt
+
+Systema is a reference for simplifying feature ownership, cross-device behavior,
+and delivery. Evaluate these patterns in the existing React/Rust architecture;
+framework comparison alone does not address the complexity problem.
+
+- **Explicit responsibilities:** Systema separates `SystemaCore`, `SystemaSync`,
+  `SystemaSources`, `SystemaUI`, and `DecoKit`. In Clawctrl, keep pure feature rules,
+  persistence/sync, platform adapters, and UI distinct within their existing owners.
+  Small features do not need a separate package for every responsibility.
+- **Durable offline writes:** use stable operation IDs, local persistence, retry,
+  and visible rejection states for eligible personal-data operations. Build on the
+  existing Notes drafts and sync ledger. Infrastructure commands need their own
+  execution and authorization guarantees before any automatic retry is allowed.
+- **Shared contracts:** version the API shapes used by desktop and iOS and check
+  contract drift. Systema's committed OpenAPI document and reference drift check
+  illustrate the approach; retain the existing Rust backend.
+- **Isolated previews:** Systema uses an in-memory store and sample fixtures with
+  an unreachable preview backend. Strengthen Clawctrl's existing demo mode into
+  deterministic feature scenarios that cannot change personal services.
+- **Repeatable verification:** adapt golden event/replay tests for retry and
+  ordering-sensitive behavior, plus UI snapshots at large text sizes and reduced
+  motion. Preserve the existing behavioral tests.
+- **Mobile device lifecycle:** use enrollment, revocation, protected token storage,
+  foreground reconnect, and change notifications through the existing auth and
+  transport owners. Native source adapters should be replaceable with test fakes.
+- **Consistent UI and delivery:** consolidate existing UI/theme primitives, reuse
+  shared feature contracts across device-specific layouts, and adapt the explicit
+  archive/upload workflow in `scripts/testflight.sh` when the iOS target exists.
+- **Bounded milestones:** use one feature contract, one data owner, and one visible
+  acceptance check per slice. Systema's spec and lineage document the value of a
+  daily workflow and the cost of expanding infrastructure before use.
+
+Reference inspected: `aaparcedo/systema` revision
+`186545913f11143ee057132fd86535b9e8902c77`. Its current `CLAUDE.md` says GitHub
+Actions is disabled; the checked-in workflow files are reference implementations,
+not evidence that those checks currently run. This comparison records adaptation
+targets, not completed Clawctrl functionality or a new mobile framework decision.
+
 ## Development agreement
 
 1. Pick one feature and one visible behavior. Write its acceptance check first.
