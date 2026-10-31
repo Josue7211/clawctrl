@@ -1843,6 +1843,7 @@ describe('ChatPage new chat intent', () => {
       </MemoryRouter>,
     )
 
+    await screen.findByRole('button', { name: 'Select project clawctrl' })
     await waitFor(() => {
       expect(screen.getByLabelText('Project')).toHaveValue('/Volumes/T7/projects/clawctrl')
     })
