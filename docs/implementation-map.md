@@ -5,9 +5,10 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Current active work: **R01 Protect development sessions**. No implementation package
-below is complete yet. The default first iOS workflow is creating, reading, and
-editing a note; quick capture in that release creates a note in the same vault.
+Next work: **R02 Execute backend tests in CI**. R01 is implemented and locally
+verified in [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64); merge and
+current CI status remain visible there. The default first iOS workflow is creating,
+reading, and editing a note; quick capture creates a note in the same vault.
 
 ## Working agreement
 
@@ -53,8 +54,8 @@ package available; record the exact prerequisite without marking the iOS work do
 
 | ID | Work package | Depends on | Status |
 | --- | --- | --- | --- |
-| R01 | Protect development sessions | None | Active |
-| R02 | Execute backend tests in CI | None | Planned |
+| R01 | Protect development sessions | None | Done |
+| R02 | Execute backend tests in CI | None | Next |
 | R03 | Produce isolated feature review evidence | None | Planned |
 | R04 | Define shared Notes API contracts | R01, R02 | Planned |
 | R05 | Define mobile connectivity and platform capabilities | R01, R04 | Planned |
@@ -89,8 +90,8 @@ package available; record the exact prerequisite without marking the iOS work do
 | I06 | Add selected native phone integrations | I04, Q01 | Planned |
 
 Status values are Next, Planned, Active, Waiting, and Done. While queued work
-remains, exactly one package is Next or Active. Done requires evidence recorded
-in the completion ledger below.
+remains, exactly one package is Next or Active. Done means implemented and verified in the linked PR, with evidence recorded
+in the completion ledger below; it does not imply the PR has merged.
 Waiting identifies a specific missing input and the independent package selected
 next. Requirements discovered during a package become explicit slices or follow-up
 work rather than silently broadening its PR.
@@ -355,7 +356,7 @@ For each package or named slice, record:
 
 | Package or slice | Revision and PR | Validation and review evidence | Remaining work |
 | --- | --- | --- | --- |
-| R01 | In progress | Persistence, logout, restart, and credential-store failure verification | Implementation and evidence pending |
+| R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). [Current macOS/Linux CI](https://github.com/Josue7211/clawctrl/pull/64/checks) was still running at handoff. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.
