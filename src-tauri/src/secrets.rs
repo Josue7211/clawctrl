@@ -991,7 +991,10 @@ mod tests {
     #[test]
     fn known_secret_keys_has_correct_count() {
         let keys = known_secret_keys();
-        assert_eq!(keys.len(), KEY_ENV_MAP.len());
+        // Multiple keyring aliases may map to the same environment variable.
+        let unique_names: std::collections::HashSet<_> =
+            KEY_ENV_MAP.iter().map(|(_, name)| *name).collect();
+        assert_eq!(keys.len(), unique_names.len());
     }
 
     #[test]

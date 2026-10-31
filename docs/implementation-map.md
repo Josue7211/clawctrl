@@ -5,7 +5,7 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Next work: **R02 Execute backend tests in CI**. R01 is implemented and locally
+Current active work: **R02 Execute backend tests in CI**. R01 is implemented and locally
 verified in [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64); merge and
 current CI status remain visible there. The default first iOS workflow is creating,
 reading, and editing a note; quick capture creates a note in the same vault.
@@ -55,7 +55,7 @@ package available; record the exact prerequisite without marking the iOS work do
 | ID | Work package | Depends on | Status |
 | --- | --- | --- | --- |
 | R01 | Protect development sessions | None | Done |
-| R02 | Execute backend tests in CI | None | Next |
+| R02 | Execute backend tests in CI | None | Active |
 | R03 | Produce isolated feature review evidence | None | Planned |
 | R04 | Define shared Notes API contracts | R01, R02 | Planned |
 | R05 | Define mobile connectivity and platform capabilities | R01, R04 | Planned |
@@ -356,7 +356,9 @@ For each package or named slice, record:
 
 | Package or slice | Revision and PR | Validation and review evidence | Remaining work |
 | --- | --- | --- | --- |
-| R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). [Current macOS/Linux CI](https://github.com/Josue7211/clawctrl/pull/64/checks) was still running at handoff. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
+| R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). macOS/Linux CI passed in [run 41245943921](https://github.com/Josue7211/clawctrl/actions/runs/41245943921) at `c932af1`. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
+
+| R02 | In progress | Full macOS backend run: 722 passed, two explicit opt-ins ignored. The initial 13 failures returned exit 101 through the new npm command. Formatting and correctness/suspicious Clippy gate passed; full frontend/build checks and CI evidence pending. [Inventory and commands](backend-testing.md). | Final validation and review evidence pending. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.

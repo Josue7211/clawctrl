@@ -4401,8 +4401,16 @@ Current user request:\nwhat changed?"
         let project_root = dir.path().join("agent-shell");
         let terminal_cwd = project_root.join("frontend");
         std::fs::create_dir_all(&terminal_cwd).expect("terminal cwd");
-        let project_root_text = project_root.to_string_lossy().to_string();
-        let terminal_cwd_text = terminal_cwd.to_string_lossy().to_string();
+        let project_root_text = project_root
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+        let terminal_cwd_text = terminal_cwd
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
         let fake = write_executable_script(
             dir.path(),
             "claude-env-fake",
@@ -4494,7 +4502,10 @@ Current user request:\nwhat changed?"
 
         assert_eq!(
             reply.reply,
-            format!("node cwd={}", runtime_dir.to_string_lossy())
+            format!(
+                "node cwd={}",
+                runtime_dir.canonicalize().unwrap().to_string_lossy()
+            )
         );
     }
 
@@ -4624,8 +4635,16 @@ printf '%s' "$last" > "$out"
         let project_root = dir.path().join("agent-shell");
         let terminal_cwd = project_root.join("frontend");
         std::fs::create_dir_all(&terminal_cwd).expect("terminal cwd");
-        let project_root_text = project_root.to_string_lossy().to_string();
-        let terminal_cwd_text = terminal_cwd.to_string_lossy().to_string();
+        let project_root_text = project_root
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+        let terminal_cwd_text = terminal_cwd
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
         let fake = write_executable_script(
             dir.path(),
             "codex-env-fake",

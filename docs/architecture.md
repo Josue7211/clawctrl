@@ -27,7 +27,9 @@ Run `npm run check:architecture` after structural changes.
 ## Verification
 
 - `npm run check` validates architecture, frontend typecheck, and dead-code ceilings.
-- `npm run test:sessions` executes the deterministic backend session-security tests.
-- `npm run check:all` adds those backend tests, the frontend suite, frontend build and bundle budget, and Tauri backend `cargo check`.
+- `npm run test:backend` executes the full deterministic Rust suite across all targets, with one test thread to isolate process-environment fixtures. `test:sessions` remains a focused session-security command.
+- `npm run check:rust` enforces Rust formatting and Clippy correctness/suspicious lints; other Clippy warnings remain visible.
+- `npm run check:all` adds these Rust checks, the backend and frontend suites, frontend build and bundle budget, and Tauri backend `cargo check`.
+- [Backend verification](backend-testing.md) inventories test dependencies, opt-in live checks, and the CI cache policy.
 - `check:all` builds the frontend before checking its bundle budget, so it works from a clean checkout.
 - Run the affected feature's tests while iterating, then verify the behavior in the running app. Use `npm run check:all` before handing off a completed feature.
