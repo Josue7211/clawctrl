@@ -34,3 +34,11 @@ These instructions are managed by memd.
 - Keep responses short, direct, and token-efficient unless the user asks for detail.
 
 <!-- memd-managed:end -->
+
+## Development workflow
+
+- Read `README.md`, `docs/features.md`, and the affected feature's README before editing.
+- Primary targets are macOS and Linux. Use `npm run dev` for the desktop app.
+- Work on one feature and one acceptance check at a time. New feature code belongs under `frontend/src/features/<feature>`; pages only connect routes.
+- Run existing feature tests while iterating, verify the change in the running app, and use `npm run check:all` before handing off.
+- Keep one canonical implementation. Remove obsolete paths when migrating a feature and update its map and remaining work.

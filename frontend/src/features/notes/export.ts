@@ -1,7 +1,7 @@
 import { marked } from 'marked'
 import { sanitizeHtml } from '@/lib/sanitize'
 import type { VaultNote } from './types'
-import type { VaultComment, VaultSuggestion } from '@/lib/vault'
+import type { VaultComment, VaultSuggestion } from '@/features/notes/storage/vault'
 import { renderDataviewBlocks } from './dataview'
 import { renderVaultPluginBlocks } from './vaultPlugins'
 

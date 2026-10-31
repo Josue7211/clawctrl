@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { GraphGroupMode } from '@/pages/notes/graphData'
+import type { GraphGroupMode } from '@/features/notes/graphData'
 
 export interface NotesGraphSettings {
   graphSearch: string

@@ -14,6 +14,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           const normalized = id.replaceAll('\\', '/')
+          if (normalized.includes('/src/features/notes/dialogs/')) return 'notes-dialogs'
           if (!normalized.includes('/node_modules/')) return undefined
           if (normalized.includes('/@tiptap/')) return 'vendor-tiptap'
           if (normalized.includes('/@xterm/')) return 'vendor-terminal'
@@ -35,6 +36,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Leave room for the desktop app and Rust watcher during feature work.
+    maxWorkers: 2,
+    testTimeout: 15_000,
     globals: true,
     setupFiles: './src/test/setup.ts',
     restoreMocks: true,

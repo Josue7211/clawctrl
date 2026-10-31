@@ -4,8 +4,11 @@ clawctrl is the local-first desktop control plane for the homelab, Hermes,
 memd, agent sessions, notes, reminders, Proxmox, Portainer, and related personal
 operations.
 
-This branch is the current T7 source-of-truth workspace. `clawctrl` is the
-active product identity across docs, package metadata, memd labels, and app UI.
+The primary desktop targets are macOS and Linux. A viable iOS app is also a
+product requirement, currently unimplemented; see the iOS work packages in the
+[implementation map](docs/implementation-map.md#ios-packages). Use this Git
+repository as the source of truth and one local checkout on each machine. No
+particular drive or mount path is required. `clawctrl` is the product identity.
 
 ## Active Surface
 
@@ -18,22 +21,59 @@ active product identity across docs, package metadata, memd labels, and app UI.
 - `.memd/`: project memory/bootstrap bundle used by Codex, Hermes, and other
   agent harnesses.
 
-## Common Commands
+## Develop
+
+Install Node.js 24 LTS and Rust stable, plus the
+[Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/) for your
+OS. macOS desktop development only needs Xcode Command Line Tools. iOS builds
+require full Xcode and a configured mobile app target; the commands below launch
+the existing desktop app.
 
 ```bash
-npm run frontend:dev
-npm run check
-npm run check:all
+npm run setup
+npm run dev
 ```
 
-`npm run check` runs architecture checks, frontend typecheck, bundle budget, and
-dead-code checks. `npm run check:all` adds frontend tests and the Tauri backend
-`cargo check`.
+`dev` opens the real desktop app and starts its frontend and local Rust backend.
+Keep it running: React changes update through Vite, and Rust changes rebuild and
+restart the app. Stop with Ctrl-C. The initial Rust build takes longer because it
+compiles native dependencies.
+
+Use the same commands from the repository root on both operating systems:
+
+```bash
+npm run check
+npm test -- src/features/notes
+npm run check:all
+npm run build
+```
+
+`check` runs architecture, TypeScript, and dead-code checks without requiring a
+production build. `check:all` also runs the frontend tests, builds the frontend,
+checks its bundle budget, and checks the Rust desktop binary. CI runs that same
+full command on macOS and Linux. `build` creates the desktop release for the OS
+you are using.
+
+`frontend:dev` remains available for browser diagnostics. The normal development
+entry point is `dev`, so native APIs and the local backend are present.
+
+## Work on one feature
+
+Select the next package from the [implementation map](docs/implementation-map.md),
+locate its existing owners in the [feature map](docs/features.md), then read the
+feature's README. Define one visible behavior and its acceptance check. Implement
+it in the existing feature, try it in the running app, and run its existing tests before
+the full checks. Record unfinished work in that feature's README or existing
+roadmap and record completion in the implementation map. Finish the current
+package's acceptance check before selecting another.
+
+Notes is the first consolidated feature: its UI, state, storage, and tests live
+in `frontend/src/features/notes/`. The page under `pages/notes/` only connects the
+route. Other features retain their existing locations while they are migrated
+one at a time; the map identifies those locations.
 
 ## Runtime Notes
 
-- T7 `/run/media/josue/T7/projects/clawctrl` is the source-of-truth local
-  workspace.
 - memd state must come from the repo `.memd` bundle before transcript recall.
 - Hermes uses the clawctrl/memd bootstrap path for project memory and agent
   context.
@@ -42,6 +82,8 @@ dead-code checks. `npm run check:all` adds frontend tests and the Tauri backend
 
 ## Docs
 
+- [Implementation map and next work](docs/implementation-map.md)
+- [Feature map](docs/features.md)
 - [Architecture](docs/architecture.md)
 - [Repo baseline](docs/repo-baseline.md)
 - [Hermes infrastructure map](docs/hermes-infra-map.md)

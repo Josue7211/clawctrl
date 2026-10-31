@@ -7,6 +7,14 @@ const ENV_TRAINING_API_BASE = import.meta.env.VITE_TRAINING_API_BASE?.trim()
 const DEFAULT_API_BASE = ENV_API_BASE || 'http://127.0.0.1:3010'
 const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:3010'
 const DEFAULT_TRAINING_API_BASE = ENV_TRAINING_API_BASE || 'https://coaching.aparcedo.org'
+
+// Initialize keys before loadApiBase() probes the desktop runtime on import.
+// Keep them in module scope so they are never exposed on window.
+let _apiKey: string | undefined
+let _localApiKey: string | undefined
+let _remoteApiKey: string | undefined
+let _localApiKeyRefresh: Promise<string | undefined> | undefined
+
 const LOCAL_DESKTOP_ONLY_PATH_PREFIXES = [
   '/api/auth',
   '/api/cache-refresh',
@@ -187,11 +195,6 @@ export class ApiError extends Error {
   }
 }
 
-// Module-level closure for the API key -- never exposed on `window`
-let _apiKey: string | undefined
-let _localApiKey: string | undefined
-let _remoteApiKey: string | undefined
-let _localApiKeyRefresh: Promise<string | undefined> | undefined
 
 /** Set the API key used for X-API-Key headers. Call once at startup. */
 export function setApiKey(key: string) {

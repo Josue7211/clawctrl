@@ -4,15 +4,17 @@ This directory contains the memd configuration for `clawctrl`.
 
 ## Quick Start
 
+Run these commands from the repository root on either macOS or Linux.
+
 1. Set up the bundle:
-   - `memd setup --output /run/media/josue/T7/projects/clawctrl/.memd`
+   - `memd setup --output .memd`
 2. Check readiness and repair drift when needed:
-   - `memd doctor --output /run/media/josue/T7/projects/clawctrl/.memd`
-   - `memd doctor --output /run/media/josue/T7/projects/clawctrl/.memd --repair`
+   - `memd doctor --output .memd`
+   - `memd doctor --output .memd --repair`
 3. Inspect the active config:
-   - `memd config --output /run/media/josue/T7/projects/clawctrl/.memd`
+   - `memd config --output .memd`
 4. Refresh the live wake-up surface:
-   - `memd wake --output /run/media/josue/T7/projects/clawctrl/.memd --route auto --intent current_task --write`
+   - `memd wake --output .memd --route auto --intent current_task --write`
 5. Launch an agent profile:
    - `.memd/agents/codex.sh`
    - `.memd/agents/claude-code.sh`
@@ -21,18 +23,18 @@ This directory contains the memd configuration for `clawctrl`.
    - `.memd/agents/openclaw.sh`
    - `.memd/agents/opencode.sh`
 6. Inspect the compact working-memory view when needed:
-   - `memd resume --output /run/media/josue/T7/projects/clawctrl/.memd --route auto --intent current_task`
+   - `memd resume --output .memd --route auto --intent current_task`
 7. Before memory-dependent answers, run bundle-aware recall:
-   - `memd lookup --output /run/media/josue/T7/projects/clawctrl/.memd --query "..."`
+   - `memd lookup --output .memd --query "..."`
 
 ## Commands
 
-- `memd commands --output /run/media/josue/T7/projects/clawctrl/.memd`
-- `memd commands --output /run/media/josue/T7/projects/clawctrl/.memd --summary`
-- `memd commands --output /run/media/josue/T7/projects/clawctrl/.memd --json`
-- `memd setup --output /run/media/josue/T7/projects/clawctrl/.memd`
-- `memd doctor --output /run/media/josue/T7/projects/clawctrl/.memd`
-- `memd config --output /run/media/josue/T7/projects/clawctrl/.memd`
+- `memd commands --output .memd`
+- `memd commands --output .memd --summary`
+- `memd commands --output .memd --json`
+- `memd setup --output .memd`
+- `memd doctor --output .memd`
+- `memd config --output .memd`
 
 The same catalog is written to `COMMANDS.md` in the bundle root.
 
@@ -43,5 +45,5 @@ The same catalog is written to `COMMANDS.md` in the bundle root.
 - Automatic short-term capture is enabled by default and writes bundle state under `state/last-resume.json`.
 - `wake.md` is the startup live-memory surface; `mem.md` is the deeper compact memory view.
 - Add `--semantic` only when you want deeper LightRAG fallback.
-- For Codex, start from `.memd/wake.md`, then use `memd lookup --output /run/media/josue/T7/projects/clawctrl/.memd --query "..."` before memory-dependent answers.
+- For Codex, start from `.memd/wake.md`, then use `memd lookup --output .memd --query "..."` before memory-dependent answers.
 - For Claude Code, import `.memd/agents/CLAUDE_IMPORTS.md` from your project `CLAUDE.md`, then use `/memory` to verify the memd files are loaded.

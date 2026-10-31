@@ -877,6 +877,9 @@ describe('ChatPage new chat intent', () => {
     const environmentDialog = await screen.findByRole('dialog', { name: 'Environment settings' })
     fireEvent.click(within(environmentDialog).getByRole('button', { name: 'Remove selected folder' }))
 
+    const removeDialog = await screen.findByRole('dialog', { name: 'Remove project' })
+    fireEvent.click(within(removeDialog).getByRole('button', { name: /^Remove project / }))
+
     await waitFor(() => {
       expect(mockApiDel).toHaveBeenCalledWith('/api/chat/workspace-projects', expect.objectContaining({
         path: '/tmp/stale',
@@ -952,6 +955,9 @@ describe('ChatPage new chat intent', () => {
     const strip = await screen.findByRole('region', { name: 'Current project scope' })
     fireEvent.click(within(strip).getByRole('button', { name: 'Remove selected folder' }))
 
+    const removeDialog = await screen.findByRole('dialog', { name: 'Remove project' })
+    fireEvent.click(within(removeDialog).getByRole('button', { name: /^Remove project / }))
+
     await waitFor(() => {
       expect(mockApiDel).toHaveBeenCalledWith('/api/chat/workspace-projects', expect.objectContaining({
         path: '/tmp/stale',
@@ -994,6 +1000,9 @@ describe('ChatPage new chat intent', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'More project actions' }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Remove selected folder' }))
+
+    const removeDialog = await screen.findByRole('dialog', { name: 'Remove project' })
+    fireEvent.click(within(removeDialog).getByRole('button', { name: /^Remove project / }))
 
     await waitFor(() => {
       expect(mockApiDel).toHaveBeenCalledWith('/api/chat/workspace-projects', expect.objectContaining({
@@ -1864,6 +1873,32 @@ describe('ChatPage new chat intent', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Mock send' }))
     expect(send).not.toHaveBeenCalled()
+  })
+
+  it('keeps a cleared project scope when the initial workspace response arrives late', async () => {
+    persistClawcontrolProjectSelection()
+    const workspace = {
+      projects: [{ name: 'clawctrl', path: '/Volumes/T7/projects/clawctrl', branches: ['main'], currentBranch: 'main', scripts: mockClawcontrolScripts }],
+      runtimeModes: ['Work locally'],
+    }
+    let finishWorkspaceLoad!: (value: typeof workspace) => void
+    mockApiGet.mockImplementationOnce(() => new Promise<typeof workspace>(resolve => { finishWorkspaceLoad = resolve }))
+
+    render(
+      <MemoryRouter initialEntries={['/chat?new=1']}>
+        <ChatPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+    fireEvent.change(screen.getByLabelText('Project'), { target: { value: '' } })
+    await act(async () => { finishWorkspaceLoad(workspace) })
+
+    expect(await screen.findByRole('button', { name: 'Select project clawctrl' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Project')).toHaveValue('')
+    expect(mockUseChatState).toHaveBeenLastCalledWith(null, expect.objectContaining({
+      context: expect.objectContaining({ project: undefined, projectRoot: undefined, workingDir: undefined }),
+    }))
+    expect(localStorage.getItem('chat-selected-project-path')).toBe('')
   })
 
   it('keeps sidebar New chat unscoped after stale project selection is cleared', async () => {
