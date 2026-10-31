@@ -9,6 +9,7 @@ use std::sync::{
     mpsc, OnceLock,
 };
 use std::time::Duration;
+use zeroize::Zeroizing;
 
 const SERVICE: &str = "com.clawctrl.desktop";
 const LEGACY_CLAWCTRL_SERVICE: &str = "com.clawcontrol.desktop";
@@ -408,13 +409,43 @@ pub(crate) fn get_internal_entry(key: &str) -> Option<String> {
     get_entry(key)
 }
 
+/// Backend-only keys use the native current-service API. Reading through the
+/// `security` executable changes the macOS caller identity and can prompt for
+/// access to an entry created by the app. No CLI, legacy, or env fallback here.
+pub(crate) fn get_protected_entry(key: &str) -> Option<String> {
+    let key = key.to_owned();
+    protected_entry_operation(move || Entry::new(SERVICE, &key)?.get_password()).ok()
+}
+
+pub(crate) fn set_protected_entry(key: &str, value: &str) -> Result<(), String> {
+    let key = key.to_owned();
+    let value = Zeroizing::new(value.to_owned());
+    protected_entry_operation(move || Entry::new(SERVICE, &key)?.set_password(&value))
+}
+
+fn protected_entry_operation<T: Send + 'static>(
+    operation: impl FnOnce() -> keyring::Result<T> + Send + 'static,
+) -> Result<T, String> {
+    let (tx, rx) = mpsc::channel();
+    std::thread::Builder::new()
+        .name("protected-keyring".into())
+        .spawn(move || {
+            let _ = tx.send(operation());
+        })
+        .map_err(|_| "OS credential store unavailable".to_owned())?;
+    match rx.recv_timeout(Duration::from_secs(2)) {
+        Ok(Ok(value)) => Ok(value),
+        _ => Err("OS credential store unavailable".to_owned()),
+    }
+}
+
 pub(crate) fn set_entry(key: &str, value: &str) -> Result<(), String> {
     if KEYRING_DISABLED.load(Ordering::Relaxed) {
         return Err("OS keychain is disabled after a timeout".into());
     }
 
     let key = key.to_string();
-    let value = value.to_string();
+    let value = Zeroizing::new(value.to_string());
     let (tx, rx) = mpsc::channel();
     let _ = std::thread::Builder::new()
         .name("keyring-set".into())

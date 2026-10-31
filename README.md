@@ -49,13 +49,20 @@ npm run build
 ```
 
 `check` runs architecture, TypeScript, and dead-code checks without requiring a
-production build. `check:all` also runs the frontend tests, builds the frontend,
+production build. `check:all` also executes the backend session-security tests,
+runs the frontend tests, builds the frontend,
 checks its bundle budget, and checks the Rust desktop binary. CI runs that same
 full command on macOS and Linux. `build` creates the desktop release for the OS
 you are using.
 
 `frontend:dev` remains available for browser diagnostics. The normal development
 entry point is `dev`, so native APIs and the local backend are present.
+
+Development sessions resume from an encrypted snapshot whose wrapping key stays
+in the OS credential store. Startup verifies restored credentials with the auth
+provider. Missing/unavailable protected storage or failed restore verification
+requires a fresh login. Logout clears the saved snapshot before reporting success.
+The previous plaintext development-session table is discarded during upgrade.
 
 ## Work on one feature
 

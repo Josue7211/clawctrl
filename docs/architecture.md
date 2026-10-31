@@ -26,7 +26,8 @@ Run `npm run check:architecture` after structural changes.
 
 ## Verification
 
-- `npm run check` validates architecture, frontend typecheck, and the current bundle budget.
-- `npm run check:all` adds the frontend test suite and Tauri backend `cargo check`.
+- `npm run check` validates architecture, frontend typecheck, and dead-code ceilings.
+- `npm run test:sessions` executes the deterministic backend session-security tests.
+- `npm run check:all` adds those backend tests, the frontend suite, frontend build and bundle budget, and Tauri backend `cargo check`.
 - `check:all` builds the frontend before checking its bundle budget, so it works from a clean checkout.
 - Run the affected feature's tests while iterating, then verify the behavior in the running app. Use `npm run check:all` before handing off a completed feature.

@@ -13,6 +13,7 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "test": "npm --prefix frontend test --",
+    "test:sessions": "cargo test --manifest-path src-tauri/Cargo.toml --lib session_persistence::tests && cargo test --manifest-path src-tauri/Cargo.toml --lib server::session_lifecycle_tests",
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
     "frontend:test": "npm --prefix frontend run test",
@@ -28,6 +29,6 @@
     "proxmox:test-certify-readonly": "node scripts/test-proxmox-live-certify-readonly.mjs",
     "proxmox:test-certify-write": "node scripts/test-proxmox-live-certify-write.mjs",
     "check": "npm run check:architecture && npm run frontend:typecheck && npm run check:dead-code",
-    "check:all": "npm run check && npm test && npm run frontend:build && npm run check:bundle && npm run check:tauri"
+    "check:all": "npm run check && npm run test:sessions && npm test && npm run frontend:build && npm run check:bundle && npm run check:tauri"
   }
 }

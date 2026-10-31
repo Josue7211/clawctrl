@@ -5,7 +5,7 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Current next work: **R01 Protect development sessions**. No implementation package
+Current active work: **R01 Protect development sessions**. No implementation package
 below is complete yet. The default first iOS workflow is creating, reading, and
 editing a note; quick capture in that release creates a note in the same vault.
 
@@ -53,7 +53,7 @@ package available; record the exact prerequisite without marking the iOS work do
 
 | ID | Work package | Depends on | Status |
 | --- | --- | --- | --- |
-| R01 | Protect development sessions | None | Next |
+| R01 | Protect development sessions | None | Active |
 | R02 | Execute backend tests in CI | None | Planned |
 | R03 | Produce isolated feature review evidence | None | Planned |
 | R04 | Define shared Notes API contracts | R01, R02 | Planned |
@@ -112,7 +112,9 @@ milestone. Distant feature milestones are prioritized by daily value when activa
 
 ### R01 Protect development sessions
 
-**Owner:** `src-tauri/src/server.rs`, `src-tauri/src/secrets.rs`, `src-tauri/src/crypto.rs`, and `src-tauri/src/routes/auth.rs`.
+**Owner:** `src-tauri/src/session_persistence.rs`, `server.rs`, `secrets.rs`,
+`crypto.rs`, and `routes/auth.rs` under `src-tauri/src`. Lifecycle regressions live
+in `src-tauri/src/session_lifecycle_tests.rs`.
 
 **First slice:** remove raw serialization of development session tokens and the
 encryption key into SQLite. Reuse protected storage where appropriate and require
@@ -129,8 +131,9 @@ Linux secret-store-unavailable case, and verify the app login/restart flow.
 modules under `src-tauri/src`.
 
 **First slice:** inventory deterministic tests and live integration tests. Add a
-root command that executes the deterministic backend tests and run it in both CI
-platform jobs. Keep service-dependent certification separately identified.
+root command that executes the full deterministic backend suite and run it in both
+CI platform jobs. Expand beyond the targeted session-security gate introduced by
+R01. Keep service-dependent certification separately identified.
 
 **Done when:** CI reports executed Rust tests, a failing backend regression fails
 the job, and the deterministic suite works without personal service credentials.
@@ -333,13 +336,14 @@ The agent runs these existing commands from the repository root while working:
 | `npm run check` | Fast architecture, TypeScript, and dead-code validation |
 | `npm test -- src/features/notes` | Existing Notes behavior tests |
 | `npm test -- src/pages/__tests__/ChatPage.new-chat.test.tsx` | Chat selection and route regressions |
-| `npm run check:all` | Current full frontend/build/budget/Rust compilation gate; R02 extends it with executed backend tests |
+| `npm run test:sessions` | R01 backend persistence and authentication lifecycle regressions |
+| `npm run check:all` | Session-security tests plus the frontend/build/budget/Rust compilation gate; R02 expands execution to the full deterministic backend suite |
 
 For each package or named slice, record:
 
 1. The behavior changed, source revision, and PR link.
 2. Targeted test commands and actual results. Before handoff, run the current
-   complete checks; R02 adds executed backend tests to that gate.
+   complete checks; R02 expands the backend tests in that gate beyond R01 sessions.
 3. Live verification, a screenshot or recording link, and browser/native errors.
    Document-only changes use document/link checks without application tests.
 4. Real-device installation/update evidence for mobile delivery, and clean-install
@@ -351,7 +355,7 @@ For each package or named slice, record:
 
 | Package or slice | Revision and PR | Validation and review evidence | Remaining work |
 | --- | --- | --- | --- |
-| None yet | — | Packages above are planned | R01 is next |
+| R01 | In progress | Persistence, logout, restart, and credential-store failure verification | Implementation and evidence pending |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.
