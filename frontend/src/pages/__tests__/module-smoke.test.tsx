@@ -59,6 +59,9 @@ vi.mock('@/lib/api', () => ({
   setConfiguredBackendBase: vi.fn(),
   getApiKey: vi.fn(() => undefined),
   getLocalApiKey: vi.fn(() => undefined),
+  getRemoteApiKey: vi.fn(() => undefined),
+  getRequestApiKeyForPath: vi.fn(() => undefined),
+  getRequestBaseForPath: vi.fn(() => 'http://127.0.0.1:5000'),
   getConfiguredBackendBase: vi.fn(() => 'http://127.0.0.1:5000'),
 }))
 
@@ -213,7 +216,7 @@ vi.mock('@/lib/error-reporter', () => ({
 }))
 
 // Vault (notes)
-vi.mock('@/lib/vault', () => ({
+vi.mock('@/features/notes/storage/vault', () => ({
   applyNoteSuggestion: vi.fn(() => Promise.resolve(null)),
   approveVaultCollaborationPairing: vi.fn(() => Promise.resolve(null)),
   createVaultCollaborationHttpTransport: vi.fn(() => ({
@@ -284,9 +287,10 @@ vi.mock('@/lib/vault', () => ({
 }))
 
 // Notes hook
-vi.mock('@/hooks/notes/useVault', () => ({
-  useVault: vi.fn(() => ({
+vi.mock('@/features/notes/storage/useVault', () => {
+  const vault = {
     notes: [],
+    unavailableNotes: [],
     folders: [],
     loading: false,
     syncing: false,
@@ -303,8 +307,9 @@ vi.mock('@/hooks/notes/useVault', () => ({
     restoreTrashedFolder: vi.fn(),
     emptyTrash: vi.fn(),
     deleteFolder: vi.fn(),
-  })),
-}))
+  }
+  return { useVault: vi.fn(() => vault) }
+})
 
 // Realtime SSE hook
 vi.mock('@/lib/hooks/useRealtimeSSE', () => ({

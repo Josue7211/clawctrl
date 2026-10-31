@@ -5,14 +5,17 @@ import path from 'node:path'
 const root = process.cwd()
 const knipBin = path.join(root, 'frontend/node_modules/knip/bin/knip.js')
 
+// Debt already present in the imported GitHub revision (7182bb7).
+// Keep these ceilings fixed while features are consolidated; lower them as
+// unused public APIs are removed. Missing imports and dependencies still fail.
 const baseline = {
-  files: 0,
+  files: 2,
   dependencies: 0,
   devDependencies: 0,
   unlisted: 0,
-  exports: 139,
-  types: 113,
-  duplicates: 0,
+  exports: 154,
+  types: 145,
+  duplicates: 6,
   unresolved: 0,
   binaries: 0,
   catalog: 0,

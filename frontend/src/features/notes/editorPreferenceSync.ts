@@ -3,7 +3,7 @@ import {
   DEFAULT_NOTES_EDITOR_PREFERENCES,
   normalizeNotesEditorPreferences,
   type NotesEditorPreferences,
-} from '@/pages/notes/notesPreferences'
+} from '@/features/notes/notesPreferences'
 
 export type SyncSafeNotesEditorPreferences = Pick<
   NotesEditorPreferences,

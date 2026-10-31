@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "identifier": "com.clawctrl.desktop",
   "build": {
-    "beforeDevCommand": "cd frontend && PATH=\"/opt/homebrew/bin:/opt/homebrew/sbin:$PATH\" npm run dev:tauri",
-    "beforeBuildCommand": "cd frontend && PATH=\"/opt/homebrew/bin:/opt/homebrew/sbin:$PATH\" npm run build",
+    "beforeDevCommand": "npm --prefix frontend run dev:tauri",
+    "beforeBuildCommand": "npm run frontend:build",
     "devUrl": "http://127.0.0.1:5174",
     "frontendDist": "../frontend/dist"
   },

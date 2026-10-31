@@ -877,6 +877,9 @@ describe('ChatPage new chat intent', () => {
     const environmentDialog = await screen.findByRole('dialog', { name: 'Environment settings' })
     fireEvent.click(within(environmentDialog).getByRole('button', { name: 'Remove selected folder' }))
 
+    const removeDialog = await screen.findByRole('dialog', { name: 'Remove project' })
+    fireEvent.click(within(removeDialog).getByRole('button', { name: /^Remove project / }))
+
     await waitFor(() => {
       expect(mockApiDel).toHaveBeenCalledWith('/api/chat/workspace-projects', expect.objectContaining({
         path: '/tmp/stale',
@@ -952,6 +955,9 @@ describe('ChatPage new chat intent', () => {
     const strip = await screen.findByRole('region', { name: 'Current project scope' })
     fireEvent.click(within(strip).getByRole('button', { name: 'Remove selected folder' }))
 
+    const removeDialog = await screen.findByRole('dialog', { name: 'Remove project' })
+    fireEvent.click(within(removeDialog).getByRole('button', { name: /^Remove project / }))
+
     await waitFor(() => {
       expect(mockApiDel).toHaveBeenCalledWith('/api/chat/workspace-projects', expect.objectContaining({
         path: '/tmp/stale',
@@ -994,6 +1000,9 @@ describe('ChatPage new chat intent', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'More project actions' }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Remove selected folder' }))
+
+    const removeDialog = await screen.findByRole('dialog', { name: 'Remove project' })
+    fireEvent.click(within(removeDialog).getByRole('button', { name: /^Remove project / }))
 
     await waitFor(() => {
       expect(mockApiDel).toHaveBeenCalledWith('/api/chat/workspace-projects', expect.objectContaining({
@@ -5512,6 +5521,8 @@ describe('ChatPage new chat intent', () => {
       </MemoryRouter>,
     )
 
+    // Finish the initial workspace load before exercising project creation.
+    await screen.findByRole('button', { name: 'Select project clawctrl' })
     const sidebar = await screen.findByTestId('session-list')
     fireEvent.click(within(sidebar).getByRole('button', { name: 'Add project' }))
     const addDialog = await screen.findByRole('dialog', { name: 'Add project' })

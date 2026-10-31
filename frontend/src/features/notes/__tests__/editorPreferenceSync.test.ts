@@ -12,7 +12,7 @@ import {
 import {
   DEFAULT_NOTES_EDITOR_PREFERENCES,
   type NotesEditorPreferences,
-} from '@/pages/notes/notesPreferences'
+} from '@/features/notes/notesPreferences'
 
 const localPreferences: NotesEditorPreferences = {
   ...DEFAULT_NOTES_EDITOR_PREFERENCES,
