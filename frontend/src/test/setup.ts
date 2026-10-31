@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom/vitest'
+import { configure } from '@testing-library/react'
+
+// Allow async UI queries time on shared CI workers and during desktop development.
+configure({ asyncUtilTimeout: 5_000 })
 
 class ResizeObserverMock {
   observe() {}

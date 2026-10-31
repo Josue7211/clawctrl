@@ -1,3 +1,9 @@
+import {
+  normalizedEnvironmentId,
+  normalizedSessionEnvironmentId,
+  uniqueProjectForEnvironment,
+  findProjectByPathAndEnvironment,
+} from '@/features/chat/workspaceSelection'
 
 
 
@@ -180,59 +186,6 @@ function persistComposerDraftSnapshot(
   } else {
     removeComposerDraftItem(draftStorageKeys.contextFiles)
   }
-}
-
-function normalizedEnvironmentId(value: string | null | undefined): string {
-  return value?.trim().toLowerCase() || ''
-}
-
-function normalizedSessionEnvironmentId(value: string | null | undefined): string {
-  return normalizedEnvironmentId(value) || 'local'
-}
-
-function preferredProjectForEnvironment(
-  projects: ChatWorkspaceProject[],
-  environmentId?: string | null,
-): ChatWorkspaceProject | null {
-  const environmentKey = normalizedEnvironmentId(environmentId)
-  if (environmentKey) {
-    return projects.find((project) => normalizedEnvironmentId(project.environmentId) === environmentKey) ?? null
-  }
-  return projects.find((project) => normalizedEnvironmentId(project.environmentId) === 'local')
-    ?? projects.find((project) => !normalizedEnvironmentId(project.environmentId))
-    ?? projects[0]
-    ?? null
-}
-
-function uniqueProjectForEnvironment(
-  projects: ChatWorkspaceProject[],
-  environmentId?: string | null,
-): ChatWorkspaceProject | null {
-  const environmentKey = normalizedEnvironmentId(environmentId)
-  if (!environmentKey) return null
-  const matches = projects.filter((project) => normalizedEnvironmentId(project.environmentId || 'local') === environmentKey)
-  return matches.length === 1 ? matches[0] : null
-}
-
-function findProjectByPathAndEnvironment(
-  projects: ChatWorkspaceProject[],
-  path: string,
-  environmentId?: string | null,
-): ChatWorkspaceProject | null {
-  const trimmedPath = path.trim()
-  const pathKey = normalizedProjectPath(path)
-  if (!pathKey) return null
-
-  const exactPathMatch = preferredProjectForEnvironment(
-    projects.filter((project) => project.path.trim() === trimmedPath),
-    environmentId,
-  )
-  if (exactPathMatch) return exactPathMatch
-
-  return preferredProjectForEnvironment(
-    projects.filter((project) => normalizedProjectPath(project.path) === pathKey),
-    environmentId,
-  )
 }
 
 function normalizedNativeAttachmentPaths(selected: string | string[] | null): string[] {
@@ -767,6 +720,12 @@ export default function ChatPage() {
   const newChatIntentRef = useRef(initialNewChat)
   const preserveNextNewChatDraftRef = useRef(false)
   const projectDialogSubmittingRef = useRef(false)
+  const projectSelectionRevisionRef = useRef(0)
+  const latestWorkspaceRouteRef = useRef('')
+  latestWorkspaceRouteRef.current = JSON.stringify([
+    projectIdParam, cwdParam, envParam, branchParam, runtimeParam,
+    selectedSessionKey, selectedSessionEnvironmentId, threadEnvironmentParam,
+  ])
   const autoRenameAttemptedRef = useRef<Set<string>>(new Set())
   const branchProjectPathRef = useRef(selectedProjectPath)
   const scriptPreferenceScopeRef = useRef('')
@@ -855,6 +814,8 @@ export default function ChatPage() {
 
   useEffect(() => {
     let cancelled = false
+    const requestedRoute = latestWorkspaceRouteRef.current
+    const requestedSelectionRevision = projectSelectionRevisionRef.current
 
     loadChatWorkspaceContext()
       .then((result) => {
@@ -864,6 +825,12 @@ export default function ChatPage() {
         saveAddedProjects(legacyProjects)
         setAddedProjects(legacyProjects)
         const next = mergeWorkspaceProjects(normalized, legacyProjects)
+        setWorkspaceContext(next)
+        setWorkspaceContextLoadFailed(false)
+        setWorkspaceContextReady(true)
+        // An initial response may arrive after a project pick, clear, or navigation.
+        if (requestedRoute !== latestWorkspaceRouteRef.current
+          || requestedSelectionRevision !== projectSelectionRevisionRef.current) return
         const realProjects = next.projects.filter((project) => project.path.trim())
         const routeProject = findProjectByRouteIdentity(realProjects, projectIdParam, cwdParam, envParam)
         const routeRequestedProject = Boolean(projectIdParam?.trim() || cwdParam?.trim())
@@ -889,8 +856,6 @@ export default function ChatPage() {
         const effectiveProject = routeProject
           ?? (scopedRouteStatePresent ? null : storedProject)
           ?? FALLBACK_PROJECT
-        setWorkspaceContext(next)
-        setWorkspaceContextLoadFailed(false)
         setSelectedProjectPath(routeMissingProjectPath || effectiveProject.path || '')
         setSelectedProjectEnvironmentId(routeMissingProjectPath ? (envParam?.trim() || '') : (effectiveProject.environmentId || ''))
         setSelectedRuntime((current) => {
@@ -907,7 +872,6 @@ export default function ChatPage() {
                 ? current
                 : (effectiveProject.currentBranch || effectiveProject.branches[0] || 'main')
         ))
-        setWorkspaceContextReady(true)
       })
       .catch((err) => {
         if (cancelled) return
@@ -1098,15 +1062,17 @@ export default function ChatPage() {
       const prevProjectId = next.get('projectId')
       const prevCwd = next.get('cwd')
       const prevEnv = next.get('env')
+      const pendingProjectSelection = pendingProjectSelectionRef.current
+      const pendingSelectionIsCurrent = Boolean(newChatIntentRef.current && pendingProjectSelection
+        && findProjectByPathAndEnvironment([selectedProject], pendingProjectSelection.path, pendingProjectSelection.environmentId))
       if (
         (prevProjectId?.trim() || prevCwd?.trim())
         && !findProjectByRouteIdentity([selectedProject], prevProjectId, prevCwd, prevEnv)
-        && !newChatIntentRef.current
+        && !pendingSelectionIsCurrent
       ) {
         return next
       }
       const shouldApplySessionRoute = Boolean(selectedSessionKey && !newChatRequested && !newChatIntentRef.current)
-      const pendingProjectSelection = pendingProjectSelectionRef.current
       if (
         newChatIntentRef.current
         && selectedSessionKey
@@ -1668,6 +1634,7 @@ export default function ChatPage() {
     runtime?: string,
     options?: { preserveDraft?: boolean },
   ) => {
+    projectSelectionRevisionRef.current += 1
     const projectReady = Boolean(project?.path.trim())
     const nextBranch = projectReady
       ? (branch || project?.currentBranch || project?.branches[0] || 'main')
@@ -1868,6 +1835,7 @@ export default function ChatPage() {
   }
 
   const handleProjectChange = (path: string, environmentId?: string | null) => {
+    projectSelectionRevisionRef.current += 1
     if (!path.trim()) {
       if (selectedSessionKey && !newChatRequested) {
         beginNewChatForProject(null)
@@ -2195,6 +2163,7 @@ export default function ChatPage() {
     }
     setProjectDialogError(null)
     setWorkspaceContextLoadFailed(false)
+    projectSelectionRevisionRef.current += 1
     rememberProjectPickerDirectory(project.path)
     const replacingSavedSession = Boolean(selectedSessionKey && !newChatRequested)
     if (replacingSavedSession) {

@@ -1843,7 +1843,6 @@ describe('ChatPage new chat intent', () => {
       </MemoryRouter>,
     )
 
-    await screen.findByRole('button', { name: 'Select project clawctrl' })
     await waitFor(() => {
       expect(screen.getByLabelText('Project')).toHaveValue('/Volumes/T7/projects/clawctrl')
     })
@@ -1874,6 +1873,32 @@ describe('ChatPage new chat intent', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Mock send' }))
     expect(send).not.toHaveBeenCalled()
+  })
+
+  it('keeps a cleared project scope when the initial workspace response arrives late', async () => {
+    persistClawcontrolProjectSelection()
+    const workspace = {
+      projects: [{ name: 'clawctrl', path: '/Volumes/T7/projects/clawctrl', branches: ['main'], currentBranch: 'main', scripts: mockClawcontrolScripts }],
+      runtimeModes: ['Work locally'],
+    }
+    let finishWorkspaceLoad!: (value: typeof workspace) => void
+    mockApiGet.mockImplementationOnce(() => new Promise<typeof workspace>(resolve => { finishWorkspaceLoad = resolve }))
+
+    render(
+      <MemoryRouter initialEntries={['/chat?new=1']}>
+        <ChatPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+    fireEvent.change(screen.getByLabelText('Project'), { target: { value: '' } })
+    await act(async () => { finishWorkspaceLoad(workspace) })
+
+    expect(await screen.findByRole('button', { name: 'Select project clawctrl' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Project')).toHaveValue('')
+    expect(mockUseChatState).toHaveBeenLastCalledWith(null, expect.objectContaining({
+      context: expect.objectContaining({ project: undefined, projectRoot: undefined, workingDir: undefined }),
+    }))
+    expect(localStorage.getItem('chat-selected-project-path')).toBe('')
   })
 
   it('keeps sidebar New chat unscoped after stale project selection is cleared', async () => {
@@ -5522,8 +5547,6 @@ describe('ChatPage new chat intent', () => {
       </MemoryRouter>,
     )
 
-    // Finish the initial workspace load before exercising project creation.
-    await screen.findByRole('button', { name: 'Select project clawctrl' })
     const sidebar = await screen.findByTestId('session-list')
     fireEvent.click(within(sidebar).getByRole('button', { name: 'Add project' }))
     const addDialog = await screen.findByRole('dialog', { name: 'Add project' })

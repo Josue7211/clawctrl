@@ -8,7 +8,7 @@ hold their scope, verification, and remaining organization work.
 | --- | --- | --- |
 | Notes | `features/notes/README.md`; route `pages/notes/Notes.tsx` | `routes/vault_local.rs`, `routes/vault.rs` |
 | Personal home and dashboard | `pages/Personal.tsx`, `pages/Dashboard.tsx`, `features/dashboard`, `components/widgets` | `routes/status.rs`, individual widget services |
-| Chat and projects | `pages/Chat.tsx`, `pages/chat`, `features/chat`, `chat/t3-adapters` | `routes/chat.rs`, `routes/workspace.rs`, `routes/claude_sessions.rs` |
+| Chat and projects | `features/chat/README.md`; `pages/Chat.tsx`, `pages/chat`, `chat/t3-adapters` | `routes/chat.rs`, `routes/workspace.rs`, `routes/claude_sessions.rs` |
 | Agent sessions and harness | `pages/sessions`, `pages/Harness.tsx`, `pages/harness`, `features/sessions`, `features/harness` | `routes/harness_data.rs`, `routes/hermes_control.rs`, `routes/agent_shell.rs` |
 | HomeLab and remote access | `pages/homelab`, `pages/remote` | `routes/homelab.rs`, `routes/vnc.rs`, `routes/terminal.rs` |
 | Messages | `pages/Messages.tsx`, `pages/messages`, `features/messages`, `hooks/messages` | `routes/messages.rs` |
