@@ -107,6 +107,7 @@ pub fn run_desktop_app() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            commands::runtime_platform,
             secrets::get_secret,
             secrets::set_secret,
             secrets::get_modules,

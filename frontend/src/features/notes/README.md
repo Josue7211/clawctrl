@@ -29,8 +29,8 @@ storage keys, sync formats, routes, and keyboard behavior during extraction.
 The [shared Notes contract](../../../../shared/contracts/README.md) defines list,
 read, create/update, conditional revisions, and durable retry acknowledgements.
 Wire types are generated; conflicts retain the local draft and its original base
-revision across restart. Remote mobile auth and the iOS client remain separate
-implementation packages.
+revision across restart. [R05 connections](../../../../docs/mobile-connectivity.md)
+add scoped, revocable device credentials; the native iOS client remains separate.
 
 ## Verify
 

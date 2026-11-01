@@ -38,6 +38,7 @@ pub mod memd;
 pub mod memory;
 pub mod messages;
 pub mod missions;
+pub mod mobile;
 pub mod module_proposals;
 pub mod notify;
 pub mod openclaw_cli_compat;
@@ -110,6 +111,7 @@ pub fn router() -> Router<AppState> {
         .merge(reminders::router())
         .merge(reviews::router())
         .merge(setup::router())
+        .merge(mobile::router())
         .merge(stale::router())
         .merge(status::router())
         .merge(todos::router())

@@ -1,0 +1,137 @@
+[
+  {
+    "mobileState": "online",
+    "mobileFailures": 0,
+    "mobileRejections": 0,
+    "devices": [],
+    "conflicts": 0,
+    "failedSaves": 0,
+    "errors": [],
+    "expectedErrors": [],
+    "warnings": [],
+    "violations": [],
+    "expectedViolations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "scenario": "features-Chat-keeps-a-clea-96570-r-a-late-workspace-response"
+  },
+  {
+    "mobileState": "online",
+    "mobileFailures": 0,
+    "mobileRejections": 0,
+    "devices": [
+      {
+        "id": "review-phone",
+        "name": "Review phone",
+        "created_at": 1768478400000,
+        "expires_at": 1776254400000,
+        "revoked_at": 1768478400000
+      }
+    ],
+    "conflicts": 0,
+    "failedSaves": 0,
+    "errors": [],
+    "expectedErrors": [],
+    "warnings": [],
+    "violations": [],
+    "expectedViolations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "scenario": "features-Desktop-creates-a-3d1bc-otes-only-device-credential"
+  },
+  {
+    "mobileState": "revoked",
+    "mobileFailures": 1,
+    "mobileRejections": 1,
+    "devices": [],
+    "conflicts": 0,
+    "failedSaves": 0,
+    "errors": [],
+    "expectedErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "warnings": [],
+    "violations": [],
+    "expectedViolations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "scenario": "features-Device-connection-ba9c1-recovery-and-revoked-states"
+  },
+  {
+    "mobileState": "online",
+    "mobileFailures": 0,
+    "mobileRejections": 0,
+    "devices": [],
+    "conflicts": 0,
+    "failedSaves": 0,
+    "errors": [],
+    "expectedErrors": [],
+    "warnings": [],
+    "violations": [
+      "POST /api/unmodeled at http://127.0.0.1:5186",
+      "GET /api/auth/session at https://blocked.invalid",
+      "WebSocket ws://blocked.invalid/unmodeled"
+    ],
+    "expectedViolations": [
+      "POST /api/unmodeled at http://127.0.0.1:5186",
+      "GET /api/auth/session at https://blocked.invalid",
+      "WebSocket ws://blocked.invalid/unmodeled"
+    ],
+    "forwardedOrigins": [],
+    "scenario": "features-Network-isolation-d7d52-xternal-HTTP-and-WebSockets"
+  },
+  {
+    "mobileState": "online",
+    "mobileFailures": 0,
+    "mobileRejections": 0,
+    "devices": [],
+    "conflicts": 0,
+    "failedSaves": 2,
+    "errors": [],
+    "expectedErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "warnings": [
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.",
+      "[vault] put failed, saved locally: ApiError: Review fixture: vault save unavailable\n    at request (http://127.0.0.1:5186/src/lib/api.ts:326:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4",
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues."
+    ],
+    "violations": [],
+    "expectedViolations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "scenario": "features-Notes-preserves-a-4b965-h-a-controlled-save-failure"
+  },
+  {
+    "mobileState": "online",
+    "mobileFailures": 0,
+    "mobileRejections": 0,
+    "devices": [],
+    "conflicts": 3,
+    "failedSaves": 0,
+    "errors": [],
+    "expectedErrors": [
+      "Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "[notes] autosave failed: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:326:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4",
+      "Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "[notes] autosave failed: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:326:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4"
+    ],
+    "warnings": [
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.",
+      "[vault] put failed, saved locally: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:326:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4",
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.",
+      "[vault] put failed, saved locally: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:326:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4"
+    ],
+    "violations": [],
+    "expectedViolations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "scenario": "features-Notes-retains-a-stale-draft-and-shows-the-conflict"
+  }
+]

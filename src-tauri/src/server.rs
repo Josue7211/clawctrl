@@ -961,43 +961,40 @@ pub async fn start(
         .filter(|origin| !origin.is_empty())
         .collect::<Vec<_>>();
 
-    let app = Router::new()
-        .nest("/api", routes::router())
-        .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10 MB
-        .layer(middleware::from_fn(no_store_api_responses))
-        .layer(middleware::from_fn(rate_limit))
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            inject_session,
-        ))
-        .layer(middleware::from_fn(request_logger))
-        .layer(middleware::from_fn(api_key_auth))
-        .layer(
-            CorsLayer::new()
-                .allow_origin(AllowOrigin::predicate(move |origin: &HeaderValue, _| {
-                    if let Ok(s) = origin.to_str() {
-                        let origin = s.trim_end_matches('/');
-                        s.starts_with("http://localhost:")
-                            || s.starts_with("http://127.0.0.1:")
-                            || s == "http://localhost"
-                            || s == "http://127.0.0.1"
-                            || s.starts_with("tauri://")
-                            || s.starts_with("http://tauri.localhost")
-                            || s.starts_with("https://tauri.localhost")
-                            || allowed_cors_origins.iter().any(|allowed| allowed == origin)
-                    } else {
-                        false
-                    }
-                }))
-                .allow_methods(Any)
-                .allow_headers(Any),
-        )
-        // Outermost layer: reject requests that take >30s to produce a response.
-        // Mitigates slowloris-style attacks. SSE and WebSocket routes are unaffected
-        // because they send the initial HTTP response (200/101) immediately — the
-        // timeout only applies to the time before the first response headers are sent.
-        .layer(TimeoutLayer::new(Duration::from_secs(30)))
-        .with_state(state);
+    let app = with_authentication(
+        Router::new()
+            .nest("/api", routes::router())
+            .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10 MB
+            .layer(middleware::from_fn(no_store_api_responses))
+            .layer(middleware::from_fn(rate_limit)),
+        state.clone(),
+    )
+    .layer(
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::predicate(move |origin: &HeaderValue, _| {
+                if let Ok(s) = origin.to_str() {
+                    let origin = s.trim_end_matches('/');
+                    s.starts_with("http://localhost:")
+                        || s.starts_with("http://127.0.0.1:")
+                        || s == "http://localhost"
+                        || s == "http://127.0.0.1"
+                        || s.starts_with("tauri://")
+                        || s.starts_with("http://tauri.localhost")
+                        || s.starts_with("https://tauri.localhost")
+                        || allowed_cors_origins.iter().any(|allowed| allowed == origin)
+                } else {
+                    false
+                }
+            }))
+            .allow_methods(Any)
+            .allow_headers(Any),
+    )
+    // Outermost layer: reject requests that take >30s to produce a response.
+    // Mitigates slowloris-style attacks. SSE and WebSocket routes are unaffected
+    // because they send the initial HTTP response (200/101) immediately — the
+    // timeout only applies to the time before the first response headers are sent.
+    .layer(TimeoutLayer::new(Duration::from_secs(30)))
+    .with_state(state);
 
     {
         tokio::spawn(async move {
@@ -1011,6 +1008,21 @@ pub async fn start(
     tracing::info!("Axum listening on {}", addr);
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+/// Shared production authentication stack, also exercised by disposable HTTP tests.
+pub(crate) fn with_authentication(router: Router<AppState>, state: AppState) -> Router<AppState> {
+    router
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            inject_session,
+        ))
+        .layer(middleware::from_fn(request_logger))
+        .layer(middleware::from_fn(api_key_auth))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            routes::mobile::authenticate,
+        ))
 }
 
 fn start_hermes_gateway_ws(state: &AppState) {
@@ -1062,6 +1074,13 @@ async fn inject_session(
     next: Next,
 ) -> Response {
     let path = req.uri().path().to_string();
+    if req
+        .extensions()
+        .get::<routes::mobile::NotesPrincipal>()
+        .is_some()
+    {
+        return next.run(req).await;
+    }
     if path == "/api/health"
         || path.starts_with("/api/setup/")
         || auth_route_skips_session_injection(&path)
@@ -1385,6 +1404,13 @@ fn query_param(query: &str, key: &str) -> Option<String> {
 
 /// Middleware that validates the `X-API-Key` header against `MC_API_KEY`.
 async fn api_key_auth(req: Request<Body>, next: Next) -> Response {
+    if req
+        .extensions()
+        .get::<routes::mobile::NotesPrincipal>()
+        .is_some()
+    {
+        return next.run(req).await;
+    }
     let path = req.uri().path();
 
     // Skip auth for exempt paths and resource paths (images, avatars, attachments)

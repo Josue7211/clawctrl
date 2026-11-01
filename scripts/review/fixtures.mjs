@@ -3,6 +3,8 @@ import { writeFile } from 'node:fs/promises'
 import { notesContract, validateNoteSchema, validateNoteExchange } from '../notes-contract.mjs'
 
 export const REVIEW_ORIGIN = 'http://127.0.0.1:5186'
+export const MOBILE_ORIGIN = 'https://mobile.fixture.invalid'
+export const DEVICE_TOKEN = `ccm_v1.${'a'.repeat(64)}`
 export const FIXTURE_ORIGIN = 'http://fixture.invalid'
 export const NOTE = structuredClone(notesContract.components.schemas.NoteDocument.examples[0])
 export const FIXED_TIME = NOTE.created_at
@@ -14,6 +16,7 @@ export const PROJECT = {
 export const test = base.extend({
   review: [async ({ context, page }, use, testInfo) => {
     const state = {
+      mobileState: 'online', mobileFailures: 0, mobileRejections: 0, devices: [],
       note: structuredClone(NOTE), failSave: false, failedSaves: 0, conflicts: 0,
       writes: [], mutations: [], errors: [], warnings: [], forwardedOrigins: [], expectedErrors: [], violations: [], expectedViolations: [], requests: [],
       workspaceGate: null, workspaceRequested: false, workspaceDelivered: false,
@@ -28,6 +31,7 @@ export const test = base.extend({
         // Injected HTTP 503 responses have browser-generated resource diagnostics.
         if (location.includes('/api/vault/local/doc?') && ((state.failedSaves > 0 && /^Failed to load resource:.*503/.test(text)) || (state.conflicts > 0 && /^Failed to load resource:.*409/.test(text)))) state.expectedErrors.push(text)
         else if (state.conflicts > 0 && text.startsWith('[notes] autosave failed: ApiError: Note changed; reload its current revision before saving')) state.expectedErrors.push(text)
+        else if (location.includes('/api/mobile/capabilities') && ((state.mobileFailures > 0 && /^Failed to load resource: net::ERR_CONNECTION_REFUSED/.test(text)) || (state.mobileRejections > 0 && /^Failed to load resource:.*401/.test(text)))) state.expectedErrors.push(text)
         else state.errors.push(text)
       })
     }
@@ -66,7 +70,7 @@ export const test = base.extend({
         return route.fulfill({ contentType: 'text/html', body: '<title>Isolated network probe</title>' })
       }
       if (request.method() === 'GET' && url.origin === 'https://fonts.googleapis.com' && url.pathname === '/css2') return route.fulfill({ contentType: 'text/css', body: '' })
-      if (![FIXTURE_ORIGIN, REVIEW_ORIGIN, 'http://127.0.0.1:3010'].includes(url.origin)) return block()
+      if (![FIXTURE_ORIGIN, MOBILE_ORIGIN, REVIEW_ORIGIN, 'http://127.0.0.1:3010'].includes(url.origin)) return block()
       if (!url.pathname.startsWith('/api/')) {
         if (url.origin === REVIEW_ORIGIN && ['GET', 'HEAD'].includes(request.method())) {
           if (!state.forwardedOrigins.includes(url.origin)) state.forwardedOrigins.push(url.origin)
@@ -78,8 +82,28 @@ export const test = base.extend({
       if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method())) state.mutations.push(key)
       if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: {
         'access-control-allow-origin': REVIEW_ORIGIN,
-        'access-control-allow-headers': '*', 'access-control-allow-methods': '*',
+        'access-control-allow-headers': 'content-type, authorization, x-api-key', 'access-control-allow-methods': '*',
       } })
+      if (key === 'GET /api/mobile/capabilities' && url.origin === MOBILE_ORIGIN) {
+        if (state.mobileState === 'offline') { state.mobileFailures++; return route.abort('connectionrefused') }
+        if (state.mobileState === 'revoked' || request.headers().authorization !== `Bearer ${DEVICE_TOKEN}`) {
+          state.mobileRejections++
+          return json({ ok: false, error: 'Unauthorized', code: 'unauthorized' }, 401)
+        }
+        return json({ ok: true, data: structuredClone(notesContract.components.schemas.MobileCapabilities.examples[0]) })
+      }
+      if (key === 'GET /api/mobile/devices') return json({ ok: true, data: { devices: state.devices } })
+      if (key === 'POST /api/mobile/devices') {
+        const body = request.postDataJSON()
+        if (body.name !== 'Review phone') return block()
+        const device = { id: 'review-phone', name: body.name, created_at: FIXED_TIME, expires_at: FIXED_TIME + 90 * 86400000, revoked_at: null }
+        state.devices = [device]
+        return json({ ok: true, data: { device, token: DEVICE_TOKEN } })
+      }
+      if (key === 'DELETE /api/mobile/devices/review-phone') {
+        state.devices = state.devices.map(device => ({ ...device, revoked_at: FIXED_TIME }))
+        return json({ ok: true, data: { id: 'review-phone', revoked: true } })
+      }
       if (key === 'PUT /api/vault/local/doc') {
         const note = request.postDataJSON()
         if (url.searchParams.get('id') !== NOTE._id || note._id !== NOTE._id) return block()
@@ -108,9 +132,13 @@ export const test = base.extend({
         state.workspaceDelivered = true
         return json({ projects: [PROJECT], runtimeModes: ['Work locally'] })
       }
+      if (request.method() === 'GET' && ['/api/secrets/bluebubbles', '/api/secrets/hermes', '/api/secrets/hermes-dashboard', '/api/secrets/sunshine', '/api/secrets/vnc', '/api/secrets/agentsecrets', '/api/secrets/agentshell', '/api/secrets/proxmox', '/api/secrets/opnsense', '/api/secrets/portainer'].includes(url.pathname)) return json({ ok: true, data: { credentials: {} } })
       const reads = {
+        '/api/status/active-config': {},
+        '/api/homelab/config': { ok: true, data: null },
+        '/api/health': { status: 'ok' },
         '/api/auth/session': { authenticated: true, user: { id: 'review-user', email: 'review@example.test' }, mfa_verified: true },
-        '/api/setup/status': { ok: true, pairing_required: false, capabilities: {}, services: { supabase: { configured: true, reachable: true } } },
+        '/api/setup/status': { ok: true, pairing_required: false, capabilities: {}, services: Object.fromEntries(['supabase', 'harness', 'agentsecrets', 'memd', 'bluebubbles', 'mac_bridge'].map(name => [name, { configured: false, reachable: false }])) },
         '/api/auth/sync/status': { ready: true, has_cached_key: true, requires_unlock: false, has_synced_services: false, needs_recovery_key: false },
         '/api/user-preferences': { ok: true, data: {} },
         '/api/generated-modules': { modules: [] },

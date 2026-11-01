@@ -1,4 +1,5 @@
 import { reportError } from './error-reporter'
+import { isDesktopRuntime, isNativeMobileRuntime } from './runtime'
 
 const API_BASE_STORAGE_KEY = 'backend-api-base'
 const CONFIGURED_BACKEND_BASE_STORAGE_KEY = 'configured-backend-base'
@@ -42,6 +43,7 @@ const LOCAL_DESKTOP_ONLY_PATH_PREFIXES = [
   '/api/memory',
   '/api/messages',
   '/api/missions',
+  '/api/mobile',
   '/api/module-proposals',
   '/api/harness',
   '/api/hermes',
@@ -79,8 +81,30 @@ function normalizeApiBase(value: string): string {
 }
 
 function isTauriDesktop(): boolean {
-  const runtime = globalThis as typeof globalThis & { isTauri?: boolean }
-  return typeof window !== 'undefined' && (!!window.__TAURI_INTERNALS__ || runtime.isTauri === true || !!_localApiKey)
+  return isDesktopRuntime(!!_localApiKey)
+}
+
+interface MobileConnection { base: string; token: string }
+let mobileConnection: MobileConnection | undefined
+export function setMobileConnection(base: string, token: string): () => void {
+  const url = new URL(base.trim())
+  const loopback = ['127.0.0.1', '[::1]', 'localhost'].includes(url.hostname)
+  if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback))
+    || url.username || url.password || url.search || url.hash || url.pathname !== '/') {
+    throw new Error('Use an HTTPS backend origin without a path, password, or query.')
+  }
+  if (!/^ccm_v1\.[a-f0-9]{64}$/.test(token.trim())) throw new Error('Enter a Notes device credential created on your desktop.')
+  // Native clients must restore this from protected storage. Never persist the
+  // credential in browser storage or reuse the broad desktop key.
+  const connection = { base: url.origin, token: token.trim() }
+  mobileConnection = connection
+  return () => { if (mobileConnection === connection) mobileConnection = undefined }
+}
+export function clearMobileConnection(): void { mobileConnection = undefined }
+function mobilePathAllowed(method: string, path: string): boolean {
+  const canonical = path.split('?')[0]
+  return (method === 'GET' && ['/api/mobile/capabilities', '/api/vault/local/documents', '/api/vault/local/doc'].includes(canonical))
+    || (method === 'PUT' && canonical === '/api/vault/local/doc')
 }
 
 function loadApiBase(): string {
@@ -209,14 +233,17 @@ export function setDesktopApiKeys(config: DesktopApiKeyConfig) {
 
 /** Get the current API key for raw fetch calls that bypass the api wrapper. */
 export function getApiKey(): string | undefined {
+  if (isNativeMobileRuntime()) return undefined
   return _apiKey
 }
 
 export function getLocalApiKey(): string | undefined {
+  if (isNativeMobileRuntime()) return undefined
   return _localApiKey ?? _apiKey
 }
 
 export function getRemoteApiKey(): string | undefined {
+  if (isNativeMobileRuntime()) return undefined
   return _remoteApiKey ?? (isTauriDesktop() ? undefined : _apiKey)
 }
 
@@ -226,6 +253,7 @@ function isLocalDesktopOnlyPath(path: string): boolean {
 }
 
 export function getRequestBaseForPath(path: string): string {
+  if (mobileConnection) return mobileConnection.base
   if (path.startsWith('/api/training')) {
     const configured = normalizeApiBase(CONFIGURED_BACKEND_BASE)
     const localDefault = normalizeApiBase(DEFAULT_LOCAL_API_BASE)
@@ -238,6 +266,7 @@ export function getRequestBaseForPath(path: string): string {
 }
 
 export function getRequestApiKeyForPath(path: string): string | undefined {
+  if (mobileConnection || isNativeMobileRuntime()) return undefined
   if (isTauriDesktop() && isLocalDesktopOnlyPath(path)) {
     return _localApiKey
   }
@@ -322,7 +351,11 @@ function isSessionAuthFailure(status: number, body: unknown): boolean {
 }
 
 async function request<T>(method: string, path: string, body?: unknown, retriedAuth = false): Promise<T> {
+  const connection = mobileConnection
+  if (isNativeMobileRuntime() && !connection) throw new ApiError(0, { error: 'Connect to your Notes backend first.' }, path)
+  if (connection && !mobilePathAllowed(method, path)) throw new ApiError(403, { error: 'This connection supports Notes only. Use the desktop for this operation.' }, path)
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (connection) headers.Authorization = `Bearer ${connection.token}`
   const apiKey = getRequestApiKeyForPath(path)
   if (apiKey) {
     headers['X-API-Key'] = apiKey
@@ -330,6 +363,7 @@ async function request<T>(method: string, path: string, body?: unknown, retriedA
   const opts: RequestInit = {
     method,
     headers,
+    ...(connection ? { redirect: 'error' as const } : {}),
   }
   if (method === 'GET') opts.cache = 'no-store'
   if (body !== undefined) opts.body = JSON.stringify(body)
@@ -341,10 +375,11 @@ async function request<T>(method: string, path: string, body?: unknown, retriedA
       if (
         res.status === 401 &&
         !retriedAuth &&
-        isTauriDesktop() &&
+        !connection && isTauriDesktop() &&
         isLocalDesktopOnlyPath(path) &&
         await refreshLocalApiKey()
       ) {
+        if (mobileConnection !== connection) throw new ApiError(0, { error: 'Connection changed; retry explicitly.' }, path)
         return request<T>(method, path, body, true)
       }
 

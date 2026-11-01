@@ -3380,3 +3380,9 @@ pub async fn open_log_dir() -> Result<String, String> {
 
     Ok(dir.to_string_lossy().into_owned())
 }
+
+/// Distinguishes native mobile IPC from desktop capabilities during bootstrap.
+#[tauri::command]
+pub fn runtime_platform() -> &'static str {
+    std::env::consts::OS
+}

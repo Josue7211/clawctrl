@@ -1,10 +1,10 @@
 //! Conditional note writes and durable retries share the existing vault transaction.
 use super::*;
-use crate::server::UserSession;
+use crate::routes::mobile::NotesPrincipal;
 
 pub(super) async fn put(
     state: &AppState,
-    session: &UserSession,
+    session: &NotesPrincipal,
     id: &str,
     mut body: Value,
 ) -> Result<Json<Value>, AppError> {
@@ -15,6 +15,7 @@ pub(super) async fn put(
     // Reserve SQLite's writer before reading a revision or receipt. No pool
     // helper is called while this transaction holds its connection.
     let mut tx = state.db.begin_with("BEGIN IMMEDIATE").await?;
+    session.check_active(&mut tx).await?;
     if let Some(operation) = operation {
         let receipt = sqlx::query("SELECT document_id, request_checksum, response_json FROM vault_note_write_receipts WHERE user_id = ? AND operation_id = ?")
             .bind(&session.user_id).bind(operation).fetch_optional(&mut *tx).await?;
