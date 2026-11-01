@@ -33,6 +33,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mobile/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mobileCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mobile/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Desktop API key and MFA-verified owner session required. Device credentials cannot manage devices. */
+        get: operations["getNotesDevice"];
+        put?: never;
+        /** @description Desktop API key and MFA-verified owner session required. Device credentials cannot manage devices. */
+        post: operations["postNotesDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mobile/devices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Desktop API key and MFA-verified owner session required. Device credentials cannot manage devices. */
+        delete: operations["deleteNotesDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -116,7 +167,7 @@ export interface components {
             ok: false;
             error: string;
             /** @enum {string} */
-            code: "bad_request" | "not_found" | "conflict" | "internal_error" | "service_unavailable";
+            code: "bad_request" | "not_found" | "conflict" | "internal_error" | "service_unavailable" | "unauthorized" | "forbidden";
         };
         NoteListResponse: {
             /** @constant */
@@ -132,6 +183,100 @@ export interface components {
             /** @constant */
             ok: true;
             data: components["schemas"]["NoteWriteData"];
+        };
+        /**
+         * @example {
+         *       "protocol_version": 1,
+         *       "notes": {
+         *         "list": true,
+         *         "read": true,
+         *         "write": true,
+         *         "revision_conflicts": true,
+         *         "idempotency": true
+         *       },
+         *       "desktop_only": [
+         *         "shell",
+         *         "filesystem",
+         *         "service_management",
+         *         "device_management"
+         *       ],
+         *       "backend": {
+         *         "mode": "headless",
+         *         "os": "linux",
+         *         "must_remain_running": true,
+         *         "vault_scope": "device_local"
+         *       },
+         *       "credential": {
+         *         "device_id": "review-phone",
+         *         "expires_at": 1776254400000
+         *       }
+         *     }
+         */
+        MobileCapabilities: {
+            /** @constant */
+            protocol_version: 1;
+            notes: {
+                /** @constant */
+                list: true;
+                /** @constant */
+                read: true;
+                /** @constant */
+                write: true;
+                /** @constant */
+                revision_conflicts: true;
+                /** @constant */
+                idempotency: true;
+            };
+            desktop_only: ("shell" | "filesystem" | "service_management" | "device_management")[];
+            backend: {
+                /** @enum {string} */
+                mode: "desktop" | "headless";
+                os: string;
+                /** @constant */
+                must_remain_running: true;
+                /** @constant */
+                vault_scope: "device_local";
+            };
+            credential: {
+                device_id: string;
+                expires_at: components["schemas"]["Timestamp"];
+            } | null;
+        };
+        MobileCapabilitiesResponse: {
+            /** @constant */
+            ok: true;
+            data: components["schemas"]["MobileCapabilities"];
+        };
+        NotesDevice: {
+            id: string;
+            name: string;
+            created_at: components["schemas"]["Timestamp"];
+            expires_at: components["schemas"]["Timestamp"];
+            revoked_at: components["schemas"]["Timestamp"] | null;
+        };
+        NotesDeviceListResponse: {
+            /** @constant */
+            ok: true;
+            data: {
+                devices: components["schemas"]["NotesDevice"][];
+            };
+        };
+        NotesDeviceIssueResponse: {
+            /** @constant */
+            ok: true;
+            data: {
+                device: components["schemas"]["NotesDevice"];
+                token: string;
+            };
+        };
+        NotesDeviceRevokeResponse: {
+            /** @constant */
+            ok: true;
+            data: {
+                id: string;
+                /** @constant */
+                revoked: true;
+            };
         };
     };
     responses: never;
@@ -177,6 +322,7 @@ export interface operations {
                 };
                 content: {
                     "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description MFA verification required */
@@ -186,6 +332,7 @@ export interface operations {
                 };
                 content: {
                     "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description ErrorResponse */
@@ -245,6 +392,7 @@ export interface operations {
                 };
                 content: {
                     "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description MFA verification required */
@@ -254,6 +402,7 @@ export interface operations {
                 };
                 content: {
                     "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description ErrorResponse */
@@ -326,6 +475,7 @@ export interface operations {
                 };
                 content: {
                     "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description MFA verification required */
@@ -335,6 +485,7 @@ export interface operations {
                 };
                 content: {
                     "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description ErrorResponse */
@@ -371,6 +522,342 @@ export interface operations {
                 };
                 content: {
                     "text/plain": string;
+                };
+            };
+            /** @description ErrorResponse */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    mobileCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description NoteListResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MobileCapabilitiesResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                    "text/plain": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description MFA verification required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getNotesDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description NoteReadResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesDeviceListResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                    "text/plain": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description MFA verification required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    postNotesDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                } & {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description NoteReadResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesDeviceIssueResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                    "text/plain": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description MFA verification required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request extraction rejected */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Request extraction rejected */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Request extraction rejected */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description ErrorResponse */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteNotesDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description NoteReadResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesDeviceRevokeResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                    "text/plain": string;
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "Authentication required" | "Unauthorized: invalid or missing API key";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description MFA verification required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": "MFA verification required";
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description ErrorResponse */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description ErrorResponse */

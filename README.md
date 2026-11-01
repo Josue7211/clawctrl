@@ -101,6 +101,7 @@ one at a time; the map identifies those locations.
 - [Implementation map and next work](docs/implementation-map.md)
 - [Feature map](docs/features.md)
 - [Architecture](docs/architecture.md)
+- [Notes device connections and backend residency](docs/mobile-connectivity.md)
 - [Repo baseline](docs/repo-baseline.md)
 - [Hermes infrastructure map](docs/hermes-infra-map.md)
 - [Hermes Mac services runbook](docs/hermes-mac-services-runbook.md)

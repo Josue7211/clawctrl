@@ -5,6 +5,7 @@ import './global.css'
 import { runMigrations } from './lib/migrations'
 import { applyThemeFromState } from './lib/theme-store'
 import { setDesktopApiKeys } from './lib/api'
+import { initializeNativeRuntime, isDesktopRuntime } from './lib/runtime'
 
 window.addEventListener('unhandledrejection', (event) => {
   const reason = String(event.reason?.message ?? event.reason ?? '')
@@ -37,8 +38,9 @@ async function bootstrapDesktopApiKeys() {
   if (typeof window === 'undefined') return
 
   try {
+    await initializeNativeRuntime()
+    if (!isDesktopRuntime()) return
     const { invoke } = await import('@tauri-apps/api/core')
-    ;(globalThis as typeof globalThis & { isTauri?: boolean }).isTauri = true
     const [localApiKey, remoteApiKey] = await Promise.all([
       invoke<string | null>('get_secret', { key: 'mc-api-key' }).catch(() => null),
       invoke<string | null>('get_secret', { key: 'backend.device-api-key' }).catch(() => null),

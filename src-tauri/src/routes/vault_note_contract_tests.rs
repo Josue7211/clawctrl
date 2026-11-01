@@ -6,19 +6,19 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::RwLock, task::JoinHandle};
 
-struct Fixture {
-    _dir: tempfile::TempDir,
-    state: AppState,
-    client: reqwest::Client,
-    origin: String,
-    task: JoinHandle<()>,
+pub(super) struct Fixture {
+    pub(super) _dir: tempfile::TempDir,
+    pub(super) state: AppState,
+    pub(super) client: reqwest::Client,
+    pub(super) origin: String,
+    pub(super) task: JoinHandle<()>,
 }
 impl Drop for Fixture {
     fn drop(&mut self) {
         self.task.abort();
     }
 }
-fn session(mfa_verified: bool) -> UserSession {
+pub(super) fn session(mfa_verified: bool) -> UserSession {
     UserSession {
         access_token: "fixture-token".into(),
         refresh_token: "fixture-refresh".into(),
@@ -46,7 +46,7 @@ async fn serve(state: AppState, auth: Option<UserSession>) -> (String, JoinHandl
     (origin, task)
 }
 impl Fixture {
-    async fn new() -> Self {
+    pub(super) async fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
         let options = SqliteConnectOptions::new()
             .filename(dir.path().join("notes.sqlite"))
@@ -90,12 +90,12 @@ impl Fixture {
             task,
         }
     }
-    fn url(&self, id: &str) -> reqwest::Url {
+    pub(super) fn url(&self, id: &str) -> reqwest::Url {
         let mut url = reqwest::Url::parse(&format!("{}/api/vault/local/doc", self.origin)).unwrap();
         url.query_pairs_mut().append_pair("id", id);
         url
     }
-    async fn put(&self, id: &str, body: Value, status: u16) -> Value {
+    pub(super) async fn put(&self, id: &str, body: Value, status: u16) -> Value {
         exchange(
             self.client
                 .put(self.url(id))
@@ -112,7 +112,7 @@ impl Fixture {
         )
         .await
     }
-    async fn read(&self, id: &str) -> Value {
+    pub(super) async fn read(&self, id: &str) -> Value {
         exchange(
             self.client.get(self.url(id)).send().await.unwrap(),
             200,
@@ -120,14 +120,14 @@ impl Fixture {
         )
         .await
     }
-    async fn count(&self, table: &str) -> i64 {
+    pub(super) async fn count(&self, table: &str) -> i64 {
         sqlx::query_scalar(&format!("SELECT COUNT(*) FROM {table}"))
             .fetch_one(&self.state.db)
             .await
             .unwrap()
     }
 }
-async fn exchange(response: reqwest::Response, status: u16, schema: &str) -> Value {
+pub(super) async fn exchange(response: reqwest::Response, status: u16, schema: &str) -> Value {
     let actual = response.status().as_u16();
     let text = response.text().await.unwrap();
     assert_eq!(actual, status, "unexpected response: {text}");

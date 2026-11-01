@@ -80,6 +80,7 @@ vi.mock('@/pages/Ideas', () => ({ default: () => <div data-testid="page-ideas">I
 vi.mock('@/pages/Capture', () => ({ default: () => <div data-testid="page-capture">Capture</div> }))
 vi.mock('@/pages/Settings', () => ({ default: () => <div data-testid="page-settings">Settings</div> }))
 vi.mock('@/pages/Search', () => ({ default: () => <div data-testid="page-search">Search</div> }))
+vi.mock('@/features/connection/ConnectionPage', () => ({ default: () => <div data-testid="page-connect">Connect</div> }))
 vi.mock('@/pages/Login', () => ({ default: () => <div data-testid="page-login">Login</div> }))
 vi.mock('@/pages/TrainingPublicIntake', () => ({
   default: () => <div data-testid="page-training-public-intake">TrainingPublicIntake</div>,
@@ -158,6 +159,7 @@ const Ideas = lazy(() => import('@/pages/Ideas'))
 const Capture = lazy(() => import('@/pages/Capture'))
 const Settings = lazy(() => import('@/pages/Settings'))
 const Search = lazy(() => import('@/pages/Search'))
+const Connect = lazy(() => import('@/features/connection/ConnectionPage'))
 const Login = lazy(() => import('@/pages/Login'))
 const TrainingPublicIntake = lazy(() => import('@/pages/TrainingPublicIntake'))
 const CustomPage = lazy(() => import('@/pages/CustomPage'))
@@ -181,6 +183,7 @@ interface RouteEntry {
  */
 const ROUTES: RouteEntry[] = [
   // Unguarded
+  { path: '/connect', type: 'page', testId: 'page-connect', guarded: false },
   { path: '/login', type: 'page', testId: 'page-login', guarded: false },
   { path: '/form/:token', type: 'page', testId: 'page-training-public-intake', guarded: false },
   { path: '/training/intake/:token', type: 'page', testId: 'page-training-public-intake', guarded: false },
@@ -252,6 +255,7 @@ function renderRoute(routePath: string) {
       <MemoryRouter initialEntries={[routePath]}>
         <Suspense fallback={<div data-testid="suspense-fallback">Loading...</div>}>
           <Routes>
+            <Route path="/connect" element={<Connect />} />
             <Route
               path="/login"
               element={
@@ -756,6 +760,7 @@ describe('Route Audit', () => {
       ['Capture', () => import('@/pages/Capture')],
       ['Settings', () => import('@/pages/Settings')],
       ['Search', () => import('@/pages/Search')],
+      ['Connect', () => import('@/features/connection/ConnectionPage')],
       ['Login', () => import('@/pages/Login')],
       ['CustomPage', () => import('@/pages/CustomPage')],
       ['NotFound', () => import('@/pages/NotFound')],

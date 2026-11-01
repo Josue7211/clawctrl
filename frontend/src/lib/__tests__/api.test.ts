@@ -12,6 +12,8 @@ import {
   setApiBase,
   setConfiguredBackendBase,
   setDesktopApiKeys,
+  setMobileConnection,
+  clearMobileConnection,
 } from '../api'
 
 const mockInvoke = vi.hoisted(() => vi.fn())
@@ -27,6 +29,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  clearMobileConnection()
   setDesktopApiKeys({})
   setApiBase('http://127.0.0.1:3010')
   setConfiguredBackendBase('http://127.0.0.1:3010')
@@ -558,4 +561,27 @@ describe('resolveDesktopApiBootstrap', () => {
       apiKey: 'local-key',
     })
   })
+})
+
+
+it('does not retry a desktop write onto a device connection selected during key refresh', async () => {
+  setDesktopApiKeys({ localApiKey: 'stale-desktop-key' })
+  let release!: (key: string) => void
+  mockInvoke.mockImplementation(() => new Promise<string>(resolve => { release = resolve }))
+  mockFetch({ ok: false, status: 401, text: async () => 'Unauthorized' })
+  const pending = api.put('/api/vault/local/doc?id=desktop.md', { content: 'Desktop draft' })
+  await vi.waitFor(() => expect(mockInvoke).toHaveBeenCalled())
+  setMobileConnection('https://notes.example.test', `ccm_v1.${'a'.repeat(64)}`)
+  release('fresh-desktop-key')
+  await expect(pending).rejects.toMatchObject({ status: 0 })
+  expect(fetch).toHaveBeenCalledTimes(1)
+})
+
+
+it('keeps device management on the desktop vault owner when another backend is configured', async () => {
+  setApiBase('https://other-backend.example.test')
+  setDesktopApiKeys({ localApiKey: 'vault-owner-key', remoteApiKey: 'other-backend-key' })
+  mockFetch({ ok: true, json: async () => ({ ok: true, data: { devices: [] } }) })
+  await api.get('/api/mobile/devices')
+  expect(fetch).toHaveBeenCalledWith('http://127.0.0.1:3010/api/mobile/devices', expect.objectContaining({ headers: expect.objectContaining({ 'X-API-Key': 'vault-owner-key' }) }))
 })

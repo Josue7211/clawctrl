@@ -14,6 +14,7 @@ import { HermesAgentSection } from './settings/HermesAgentControlSection'
 
 // ── Lazy-loaded section components ──────────────────────────────────────────
 const SettingsUser = lazy(() => import('./settings/SettingsUser'))
+const DeviceConnectionsPanel = lazy(() => import('@/features/connection/DeviceConnectionsPanel'))
 const SettingsConnections = lazy(() => import('./settings/SettingsConnections'))
 const SettingsDisplay = lazy(() => import('./settings/SettingsDisplay'))
 const SettingsKeybindings = lazy(() => import('./settings/SettingsKeybindings'))
@@ -234,6 +235,7 @@ export default function SettingsPage() {
       case 'connections':
         return (
           <Suspense fallback={<SectionFallback />}>
+            <DeviceConnectionsPanel />
             <SettingsConnections />
           </Suspense>
         )

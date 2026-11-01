@@ -39,6 +39,7 @@ const Ideas = lazy(() => import('@/pages/Ideas'))
 const Capture = lazy(() => import('@/pages/Capture'))
 const Settings = lazy(() => import('@/pages/Settings'))
 const Search = lazy(() => import('@/pages/Search'))
+const Connect = lazy(() => import('@/features/connection/ConnectionPage'))
 const Login = lazy(() => import('@/pages/Login'))
 const TrainingPublicIntake = lazy(() => import('@/pages/TrainingPublicIntake'))
 const CustomPage = lazy(() => import('@/pages/CustomPage'))
@@ -69,6 +70,7 @@ function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
+        <Route path="/connect" element={<Connect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/form/:token" element={<TrainingPublicIntake />} />
         <Route path="/training/intake/:token" element={<TrainingPublicIntake />} />

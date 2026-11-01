@@ -1,4 +1,4 @@
-import { test, expect, NOTE, PROJECT } from './fixtures.mjs'
+import { test, expect, NOTE, PROJECT, MOBILE_ORIGIN, DEVICE_TOKEN } from './fixtures.mjs'
 
 async function capture(page, testInfo, name) {
   const path = testInfo.outputPath(name)
@@ -99,4 +99,45 @@ test('Network isolation blocks unknown writes and external HTTP and WebSockets',
     socket.onclose = () => resolve()
   }))
   expect(review.violations).toEqual(review.expectedViolations)
+})
+
+
+test('Device connection shows offline, recovery, and revoked states', async ({ page, review }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/connect')
+  await page.getByLabel('Backend HTTPS address').fill(MOBILE_ORIGIN)
+  await page.getByLabel('Notes device credential').fill(DEVICE_TOKEN)
+  review.mobileState = 'offline'
+  await page.getByRole('button', { name: 'Connect / retry' }).click()
+  await expect(page.getByRole('status')).toContainText('Backend unreachable')
+  await capture(page, testInfo, 'connection-offline.png')
+  review.mobileState = 'online'
+  await page.getByRole('button', { name: 'Connect / retry' }).click()
+  await expect(page.getByRole('status')).toContainText('Connected to Notes')
+  await expect(page.getByLabel('Connection capabilities')).toContainText('headless on linux')
+  await page.getByText('Manage credentials in desktop Settings → Connections.').scrollIntoViewIfNeeded()
+  await expect(page.getByText('Manage credentials in desktop Settings → Connections.')).toBeVisible()
+  await capture(page, testInfo, 'connection-online.png')
+  review.mobileState = 'revoked'
+  await page.getByRole('button', { name: 'Connect / retry' }).click()
+  await expect(page.getByRole('status')).toContainText('expired, invalid, or revoked')
+  expect(await page.evaluate(token => JSON.stringify({ ...localStorage, ...sessionStorage }).includes(token), DEVICE_TOKEN)).toBe(false)
+  await capture(page, testInfo, 'connection-revoked.png')
+  await page.getByRole('button', { name: 'Disconnect' }).click()
+  await expect(page.getByLabel('Notes device credential')).toHaveValue('')
+})
+
+test('Desktop creates and revokes a Notes-only device credential', async ({ page, review }, testInfo) => {
+  await page.goto('/settings?section=connections')
+  const panel = page.getByRole('region', { name: 'Phone connections' })
+  await panel.getByLabel('Device name').fill('Review phone')
+  await panel.getByRole('button', { name: 'Create Notes credential' }).click()
+  await expect(panel.getByLabel('New Notes credential')).toHaveValue(DEVICE_TOKEN)
+  await expect(panel.getByText('Review phone — Active', { exact: false })).toBeVisible()
+  await capture(page, testInfo, 'device-created.png')
+  await panel.getByRole('button', { name: 'Revoke Review phone' }).click()
+  await expect(panel.getByRole('status')).toContainText('Device revoked')
+  await expect(panel.getByLabel('New Notes credential')).toHaveCount(0)
+  expect(review.devices[0].revoked_at).toBeTruthy()
+  await capture(page, testInfo, 'device-revoked.png')
 })

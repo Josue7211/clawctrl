@@ -17,6 +17,7 @@ use std::fs;
 use std::path::{Path as FsPath, PathBuf};
 
 use crate::error::{success_json, AppError};
+use crate::routes::mobile::RequireNotesAuth;
 use crate::routes::util::random_uuid;
 use crate::server::{AppState, RequireAuth};
 
@@ -1384,7 +1385,7 @@ async fn maybe_import_sparse_obsidian_vault(state: &AppState) -> Result<(), AppE
 
 async fn list_documents(
     State(state): State<AppState>,
-    RequireAuth(_session): RequireAuth,
+    RequireNotesAuth(_session): RequireNotesAuth,
 ) -> Result<Json<Value>, AppError> {
     maybe_import_sparse_obsidian_vault(&state).await?;
 
@@ -1924,7 +1925,7 @@ async fn reject_suggestion(
 
 async fn get_document(
     State(state): State<AppState>,
-    RequireAuth(_session): RequireAuth,
+    RequireNotesAuth(_session): RequireNotesAuth,
     Query(q): Query<DocQuery>,
 ) -> Result<Json<Value>, AppError> {
     let row = sqlx::query(
@@ -1946,7 +1947,7 @@ mod note_write;
 
 async fn put_document(
     State(state): State<AppState>,
-    RequireAuth(session): RequireAuth,
+    RequireNotesAuth(session): RequireNotesAuth,
     Query(q): Query<DocQuery>,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, AppError> {
@@ -4784,21 +4785,26 @@ async fn restore_revision(
 
 async fn get_document_path(
     State(state): State<AppState>,
-    RequireAuth(session): RequireAuth,
+    RequireNotesAuth(session): RequireNotesAuth,
     Path(id): Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    get_document(State(state), RequireAuth(session), Query(DocQuery { id })).await
+    get_document(
+        State(state),
+        RequireNotesAuth(session),
+        Query(DocQuery { id }),
+    )
+    .await
 }
 
 async fn put_document_path(
     State(state): State<AppState>,
-    RequireAuth(session): RequireAuth,
+    RequireNotesAuth(session): RequireNotesAuth,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<Value>, AppError> {
     put_document(
         State(state),
-        RequireAuth(session),
+        RequireNotesAuth(session),
         Query(DocQuery { id }),
         body,
     )
@@ -5416,3 +5422,7 @@ mod tests {
 #[cfg(test)]
 #[path = "vault_note_contract_tests.rs"]
 mod contract_tests;
+
+#[cfg(test)]
+#[path = "mobile_connection_tests.rs"]
+mod mobile_connection_tests;

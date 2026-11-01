@@ -20,7 +20,12 @@ export function validateNoteSchema(name, value) {
   if (!validate(value)) throw new Error(`Notes contract ${name}: ${ajv.errorsText(validate.errors)}`)
 }
 export function validateNoteExchange(method, path, status, value, contentType = 'application/json') {
-  const operation = notesContract.paths[path]?.[method.toLowerCase()]
+  const segments = path.split('/')
+  const route = notesContract.paths[path] || Object.entries(notesContract.paths).find(([template]) => {
+    const parts = template.split('/')
+    return parts.length === segments.length && parts.every((part, index) => /^\{[^}]+\}$/.test(part) ? !!segments[index] : part === segments[index])
+  })?.[1]
+  const operation = route?.[method.toLowerCase()]
   if (!operation) return
   const schema = operation.responses[String(status)]?.content?.[contentType]?.schema
   if (!schema) throw new Error(`Unspecified Notes response: ${method} ${path} ${status} ${contentType}`)

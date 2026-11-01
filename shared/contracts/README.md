@@ -4,7 +4,7 @@
 for listing, creating, reading, and updating vault notes. It describes the existing
 SQLite owner and routes; it creates no second store. Notes quick capture uses the
 same PUT as a normal create. The general `/api/quick-capture` inbox is separate
-(F07). Mobile connectivity and credentials remain R05; an iPhone app remains I01–I04.
+(F07). [R05 device connections](../../docs/mobile-connectivity.md) add revocable Notes-only credentials; an iPhone app remains I01–I04.
 
 ## Ownership and checks
 
@@ -44,7 +44,8 @@ TypeScript only; Rust schema retrieval features are disabled.
 
 Success uses `{ ok: true, data: ... }`. The compatible
 `/api/vault/local/documents/:id` read/write alias delegates to the same handlers;
-encode the entire ID as one segment. Query-form IDs are the preferred client path.
+encode the entire ID as one segment. Device credentials use only the query-form
+route; aliases remain desktop-only. Query-form IDs are the preferred client path.
 IDs are stable, case-sensitive strings, not filesystem paths or rewritten slugs.
 New writes require a nonblank ID, at most 4,096 characters, without `..`, NUL, or a
 leading `_`. Folders and titles do not change identity. Attachment payloads remain
@@ -53,9 +54,11 @@ outside this first contract.
 Production desktop middleware requires `X-API-Key` and an authenticated,
 MFA-verified server session. A key alone is insufficient. The existing vault is
 shared within one local application database; this is **not per-account note
-isolation**. Do not expose the desktop key as mobile pairing or infer a bearer-token
-protocol. R05 must define secure remote access, revocation, and backend residency.
-The contract preserves the actual plain-text 401/403 rejections; application
+isolation**. R05 adds a separate, expiring Notes-only bearer credential with
+per-device revocation; never send the desktop key to a phone. See the linked R05
+guide for exact scopes, host residency, issuance, and live-proof limits.
+Desktop authentication retains its plain-text 401/403 rejections; device
+authentication returns the JSON error envelope. Application
 400/404/409/500 errors use `{ ok: false, error, code }`. Axum's malformed query/JSON,
 body-limit, and content-type errors can be plain text as described in the schema.
 

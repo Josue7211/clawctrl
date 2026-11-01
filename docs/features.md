@@ -23,6 +23,7 @@ files hold their scope, verification, and remaining organization work.
 | Missions, approvals, pipeline | `pages/Missions.tsx`, `pages/approvals`, `pages/Pipeline.tsx`, matching `features` folders | `routes/missions.rs`, `routes/approvals.rs`, `routes/pipeline` |
 | Memory and knowledge | `pages/Memory.tsx`, `pages/KnowledgeBase.tsx`, `features/knowledge` | `routes/memd.rs`, `routes/memory.rs`, `routes/knowledge.rs`, `routes/rag.rs` |
 | Settings and setup | `pages/Settings.tsx`, `pages/settings`, `components/wizard` | `routes/preferences.rs`, `routes/setup.rs`, `routes/wizard.rs` |
+| Device connections | `features/connection/README.md`; `/connect` and desktop Settings → Connections | `routes/mobile.rs`, canonical Notes routes, production auth stack |
 | iOS app | No configured target or usable release; implementation packages I01 through I06 | Shared Notes contracts and mobile connectivity are owned by R04 and R05 |
 
 Frontend paths in this table are relative to `frontend/src`; Rust paths are

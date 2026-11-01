@@ -2,12 +2,15 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Clawctrl local Notes API",
-    "version": "1.0.0",
-    "description": "Device-local vault Notes CRUD contract. Notes quick capture uses this same create operation with a stable client-chosen ID. General /api/quick-capture inbox behavior is separate. An authenticated, MFA-verified server session is required in addition to the desktop API key; remote device authentication is defined in R05."
+    "version": "1.1.0",
+    "description": "Device-local Notes CRUD. Desktop access requires its API key and verified session. Revocable Notes-only device bearer credentials are issued by a verified desktop owner; they do not share the desktop session. Notes quick capture uses the same PUT. General quick-capture inbox behavior remains separate."
   },
   "security": [
     {
       "desktopApiKey": []
+    },
+    {
+      "notesDevice": []
     }
   ],
   "paths": {
@@ -36,6 +39,11 @@
                     "Unauthorized: invalid or missing API key"
                   ]
                 }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -48,6 +56,11 @@
                   "enum": [
                     "MFA verification required"
                   ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -125,6 +138,11 @@
                     "Unauthorized: invalid or missing API key"
                   ]
                 }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -137,6 +155,11 @@
                   "enum": [
                     "MFA verification required"
                   ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -233,6 +256,11 @@
                     "Unauthorized: invalid or missing API key"
                   ]
                 }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -245,6 +273,11 @@
                   "enum": [
                     "MFA verification required"
                   ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -326,6 +359,469 @@
           }
         }
       }
+    },
+    "/api/mobile/capabilities": {
+      "get": {
+        "operationId": "mobileCapabilities",
+        "responses": {
+          "200": {
+            "description": "NoteListResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileCapabilitiesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/devices": {
+      "get": {
+        "operationId": "getNotesDevice",
+        "description": "Desktop API key and MFA-verified owner session required. Device credentials cannot manage devices.",
+        "security": [
+          {
+            "desktopApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NoteReadResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesDeviceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postNotesDevice",
+        "description": "Desktop API key and MFA-verified owner session required. Device credentials cannot manage devices.",
+        "security": [
+          {
+            "desktopApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NoteReadResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesDeviceIssueResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request extraction rejected",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request extraction rejected",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request extraction rejected",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/devices/{id}": {
+      "delete": {
+        "operationId": "deleteNotesDevice",
+        "description": "Desktop API key and MFA-verified owner session required. Device credentials cannot manage devices.",
+        "security": [
+          {
+            "desktopApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NoteReadResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesDeviceRevokeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -334,6 +830,11 @@
         "type": "apiKey",
         "in": "header",
         "name": "X-API-Key"
+      },
+      "notesDevice": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Opaque per-device Notes-only credential. Created once by an MFA-verified desktop owner; revocable and expires after 90 days. Send only over HTTPS. Never send as a query parameter."
       }
     },
     "schemas": {
@@ -623,7 +1124,9 @@
               "not_found",
               "conflict",
               "internal_error",
-              "service_unavailable"
+              "service_unavailable",
+              "unauthorized",
+              "forbidden"
             ]
           }
         },
@@ -674,6 +1177,292 @@
           },
           "data": {
             "$ref": "#/components/schemas/NoteWriteData"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "MobileCapabilities": {
+        "type": "object",
+        "properties": {
+          "protocol_version": {
+            "type": "integer",
+            "const": 1
+          },
+          "notes": {
+            "type": "object",
+            "properties": {
+              "list": {
+                "type": "boolean",
+                "const": true
+              },
+              "read": {
+                "type": "boolean",
+                "const": true
+              },
+              "write": {
+                "type": "boolean",
+                "const": true
+              },
+              "revision_conflicts": {
+                "type": "boolean",
+                "const": true
+              },
+              "idempotency": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": [
+              "list",
+              "read",
+              "write",
+              "revision_conflicts",
+              "idempotency"
+            ],
+            "additionalProperties": false
+          },
+          "desktop_only": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "shell",
+                "filesystem",
+                "service_management",
+                "device_management"
+              ]
+            }
+          },
+          "backend": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "desktop",
+                  "headless"
+                ]
+              },
+              "os": {
+                "type": "string"
+              },
+              "must_remain_running": {
+                "type": "boolean",
+                "const": true
+              },
+              "vault_scope": {
+                "type": "string",
+                "const": "device_local"
+              }
+            },
+            "required": [
+              "mode",
+              "os",
+              "must_remain_running",
+              "vault_scope"
+            ],
+            "additionalProperties": false
+          },
+          "credential": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "device_id": {
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "$ref": "#/components/schemas/Timestamp"
+                  }
+                },
+                "required": [
+                  "device_id",
+                  "expires_at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "protocol_version",
+          "notes",
+          "desktop_only",
+          "backend",
+          "credential"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "protocol_version": 1,
+            "notes": {
+              "list": true,
+              "read": true,
+              "write": true,
+              "revision_conflicts": true,
+              "idempotency": true
+            },
+            "desktop_only": [
+              "shell",
+              "filesystem",
+              "service_management",
+              "device_management"
+            ],
+            "backend": {
+              "mode": "headless",
+              "os": "linux",
+              "must_remain_running": true,
+              "vault_scope": "device_local"
+            },
+            "credential": {
+              "device_id": "review-phone",
+              "expires_at": 1776254400000
+            }
+          }
+        ]
+      },
+      "MobileCapabilitiesResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/MobileCapabilities"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "NotesDevice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_at",
+          "expires_at",
+          "revoked_at"
+        ],
+        "additionalProperties": false
+      },
+      "NotesDeviceListResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "devices": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NotesDevice"
+                }
+              }
+            },
+            "required": [
+              "devices"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "NotesDeviceIssueResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "device": {
+                "$ref": "#/components/schemas/NotesDevice"
+              },
+              "token": {
+                "type": "string",
+                "pattern": "^ccm_v1\\.[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "device",
+              "token"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "NotesDeviceRevokeResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "revoked": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": [
+              "id",
+              "revoked"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
