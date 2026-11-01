@@ -5,9 +5,12 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Next work: **I01 Select and prove the native client foundation**. R05’s connection
-implementation is verified; its real host/HTTPS check awaits the selected endpoint.
-I01 is independent of that input. R01–R04 are
+Current work: **Q00 Stabilize existing features**. The sync-integrity slice is
+source-verified: no false upload acknowledgments and no deletion of pending changes.
+Next is Career/Growth and cache schema/allowlist compatibility. The
+[bug register](bug-register.md) separates confirmed defects from feature workflows
+that still need verification. Resolve data ownership, provider availability and
+native transport before selecting the iOS foundation. R01–R04 are
 implemented and verified in their linked PRs; the completion ledger records CI
 and review evidence. The default first iOS workflow is creating, reading, and
 editing a note; quick capture creates a note in the same vault.
@@ -60,8 +63,9 @@ package available; record the exact prerequisite without marking the iOS work do
 | R02 | Execute backend tests in CI | None | Done |
 | R03 | Produce isolated feature review evidence | None | Done |
 | R04 | Define shared Notes API contracts | R01, R02 | Done |
-| R05 | Define mobile connectivity and platform capabilities | R01, R04 | Waiting: chosen vault host/HTTPS origin and live-path proof; I01 proceeds independently |
-| I01 | Select and prove the native client foundation | R03 | Next |
+| Q00 | Stabilize existing features, beginning with sync integrity | R02, R03 | Active: BUG-001–004 source-verified; next BUG-006/007 schema/allowlist compatibility |
+| R05 | Define mobile connectivity and platform capabilities | R01, R04 | Waiting: vault ownership, provider availability and native/live-path proof |
+| I01 | Select and prove the native client foundation | R03, Q00 first slice | Planned: follows stabilization and backend/transport decisions |
 | I02 | Implement the online iPhone Notes workflow | I01, R04, R05 | Planned |
 | I03 | Preserve mobile edits offline and across retries | I02 | Planned |
 | I04 | Deliver and update the app through TestFlight | I02, I03 | Planned |
@@ -290,6 +294,22 @@ controller framework to perform these extractions.
 
 ## Distribution and quality packages
 
+### Q00 Stabilize existing features
+
+**Owner:** existing feature owners in the [feature map](features.md), with defects
+and acceptance checks in the [bug register](bug-register.md).
+
+**First slice:** shared Supabase health and outbox integrity in `supabase.rs` and
+`sync.rs`. A failing provider must not appear healthy; unsupported or malformed
+entries must not appear uploaded or block unrelated valid uploads; queue pressure
+must not delete pending changes. Prove this using disposable SQLite, loopback HTTP,
+retry and restart checks before the full repository gate.
+
+**Follow-up slices:** schema/allowlist compatibility, atomic local state and
+outbox writes, stable pull pagination, then one feature workflow at a time. This
+package is not complete merely because the first slice passes. Cloud availability,
+deployed schema/RLS and real feature acceptance remain separately recorded.
+
 | ID | Owner and first slice | Completion check |
 | --- | --- | --- |
 | D01 | `.github/workflows`, `src-tauri/tauri.conf.json`, and release scripts: package the desktop app on both platforms | A clean macOS and Linux installation starts without development tooling; package evidence, version, and required runtime dependencies are recorded |
@@ -371,7 +391,7 @@ For each package or named slice, record:
 
 | R04 | `caf5a55`; [draft PR 67](https://github.com/Josue7211/clawctrl/pull/67), stacked on PR 66 | Final local `npm run check:all` passed: 728 backend / 4,147 frontend tests, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Two Node contract tests plus a deliberate generated-type drift rejection passed. Six real HTTP tests cover revisions, concurrent writes, durable replay/restart/delete, rollback, IDs, and route auth. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41346561908/job/124967889969) passed four scenarios; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41346561908/artifacts/13099711423) was downloaded and verified. [Screenshots, recording, and coverage](reviews/r04-notes-contract.md). | Full [macOS/Linux and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41347008908) at `2e553d6`. Migration 0029 adds retained receipts; [retry, rollback, and audit limitations](../shared/contracts/README.md). Other vault mutations retain existing concurrency behavior. Desktop drafts are local; no remote mobile auth, automatic merge, native iOS client, or mobile outbox yet. R05 is next. |
 
-| R05 connection implementation; live proof waiting | `ea31cde`; [draft PR 68](https://github.com/Josue7211/clawctrl/pull/68), stacked on PR 67 | Final local `npm run check:all` passed: 732 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Four real HTTP security tests use the production authentication stack and disposable SQLite; 50 focused frontend checks and all six browser scenarios passed. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/job/124987662541) passed; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/artifacts/13102236886) was downloaded and verified. [Phone-width screenshots, recordings, results, and limits](reviews/r05-mobile-connectivity.md). | Native [macOS/Linux CI](https://github.com/Josue7211/clawctrl/pull/68/checks) pending. R05 is **not Done**: confirm the existing vault owner/HTTPS origin and verify the intended live path, revocation, host sleep/offline and reconnect. Provisional host is the existing Mac; no infrastructure was provisioned. [Residency, scope, migration, and restore rules](mobile-connectivity.md). Native app/protected phone storage/outbox/TestFlight remain I01–I04. I01 is independent and Next. |
+| R05 connection implementation; live proof waiting | `ea31cde`; [draft PR 68](https://github.com/Josue7211/clawctrl/pull/68), stacked on PR 67 | Final local `npm run check:all` passed: 732 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Four real HTTP security tests use the production authentication stack and disposable SQLite; 50 focused frontend checks and all six browser scenarios passed. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/job/124987662541) passed; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/artifacts/13102236886) was downloaded and verified. [Phone-width screenshots, recordings, results, and limits](reviews/r05-mobile-connectivity.md). | Final [macOS/Linux and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41353620231) at `d16272b`. R05 is **not Done**: establish vault ownership, provider availability, native transport and the real connection path, including revocation, host sleep/offline and reconnect. No host is selected and no infrastructure was provisioned. [Residency, scope, migration, and restore rules](mobile-connectivity.md). Native app/protected phone storage/outbox/TestFlight remain I01–I04; Q00 stabilization now precedes I01. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.

@@ -1,0 +1,55 @@
+{
+  "package": "Q00 first slice",
+  "base_revision": "d16272b23488bfa499e49661dc9b1011df9a187b",
+  "branch": "codex/r06-sync-integrity",
+  "confirmed_defects": [
+    "BUG-001",
+    "BUG-002",
+    "BUG-003",
+    "BUG-004"
+  ],
+  "regression_before_fix": {
+    "health_command_exit": 101,
+    "queue_command_exit": 101,
+    "health_failure": "HTTP 403 reported healthy",
+    "queue_failures": [
+      "Unsupported entries falsely acknowledged",
+      "1000 pending operations deleted",
+      "Malformed payload blocks later uploads"
+    ]
+  },
+  "local_gate": {
+    "command": "npm run check:all",
+    "exit_code": 0,
+    "backend_passed": 736,
+    "backend_ignored": 2,
+    "frontend_passed": 4158,
+    "frontend_files_passed": 257,
+    "node_contract_passed": 2,
+    "format_clippy_type_architecture_dead_code_build_budget_desktop_compile": "passed"
+  },
+  "targeted_rust_tests": {
+    "sync_passed": 11,
+    "supabase_passed": 8
+  },
+  "browser_review": {
+    "command": "npm run review:features",
+    "passed": 7,
+    "unexpected_errors": 0,
+    "unmodeled_requests": 0,
+    "mode": "isolated real React renderer with fixture APIs; not native or live-cloud acceptance"
+  },
+  "deployment": {
+    "deployed": false,
+    "database_migration_required": false,
+    "live_infrastructure_changed": false
+  },
+  "remaining": [
+    "Career/Growth upload support",
+    "Cache schema compatibility",
+    "Atomic feature state plus outbox writes",
+    "Stable pull pagination",
+    "Native remote transport",
+    "Non-destructive queue capacity management"
+  ]
+}

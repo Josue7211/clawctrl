@@ -99,6 +99,7 @@ one at a time; the map identifies those locations.
 ## Docs
 
 - [Implementation map and next work](docs/implementation-map.md)
+- [Feature bugs and verification queue](docs/bug-register.md)
 - [Feature map](docs/features.md)
 - [Architecture](docs/architecture.md)
 - [Notes device connections and backend residency](docs/mobile-connectivity.md)

@@ -6,11 +6,15 @@ phone storage, durable mobile outbox, and TestFlight delivery remain I01–I04.
 
 ## Ownership and host decision
 
-Use the computer that already owns the canonical SQLite vault. The provisional
-choice is the existing Mac, with its current desktop backend running. Phone access
-goes offline when that computer sleeps, exits the app, or loses its network. No
-second copy of the vault is created and there is no automatic failover to another
-backend. The user's host choice and existing HTTPS origin still need confirmation;
+The vault owner has not been selected. Clawctrl Notes uses host-local SQLite and
+attachment files; the generic Supabase worker does not replicate these tables.
+Supabase auth and other feature data do not make separate local vaults one shared
+dataset. Preserve and reconcile existing data before selecting a canonical owner.
+
+Use the selected owner's existing backend only after verifying its availability
+and data root. Phone access goes offline when that host sleeps, exits the app, or
+loses its network. No second copy of the vault is created and there is no automatic failover to another
+backend. Host ownership and the secure native transport path still need verification;
 no real host has been exposed or reconfigured by this package.
 
 The existing `clawcontrol-backend` binary is the alternative for unattended use:
@@ -25,7 +29,14 @@ Headless mode advertises itself honestly and provides no desktop UI/IPC services
 An existing always-on Linux host is an option only after explicitly selecting its
 vault ownership and verifying migration/backup recovery; it is not provisioned here.
 
-Keep the Rust listener's current loopback default. Use **existing HTTPS ingress**
+Existing private networking should be evaluated alongside existing HTTPS ingress;
+neither peer-online status nor a configured hostname proves backend availability.
+The current R05 renderer accepts HTTPS origins and its packaged Tauri CSP does not
+yet permit arbitrary remote fetches (BUG-009 in the [bug register](bug-register.md)).
+Do not claim native transport is proved by browser fixtures.
+
+Keep the Rust listener's current loopback default. The current renderer requires
+**existing HTTPS ingress**
 that reaches the owning backend, with valid certificates and the canonical `/api`
 paths. Forward only GET `/api/mobile/capabilities`, GET
 `/api/vault/local/documents`, and GET/PUT `/api/vault/local/doc` for phone access.

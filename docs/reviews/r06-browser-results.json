@@ -1,0 +1,123 @@
+{
+  "setupStatus": {
+    "ok": true,
+    "pairing_required": false,
+    "capabilities": {},
+    "missing": [],
+    "services": {
+      "supabase": {
+        "configured": true,
+        "reachable": false
+      },
+      "harness": {
+        "configured": true,
+        "reachable": true
+      },
+      "agentsecrets": {
+        "configured": true,
+        "reachable": true
+      },
+      "memd": {
+        "configured": true,
+        "reachable": true
+      },
+      "bluebubbles": {
+        "configured": true,
+        "reachable": true
+      },
+      "mac_bridge": {
+        "configured": true,
+        "reachable": true
+      }
+    }
+  },
+  "mobileState": "online",
+  "mobileFailures": 0,
+  "mobileRejections": 0,
+  "devices": [],
+  "note": {
+    "_id": "Workspace/Review note.md",
+    "_rev": "local-1768478400000",
+    "type": "note",
+    "title": "Review note",
+    "folder": "Workspace",
+    "content": "# Review note\n\nA fixed sample note for feature review.\n",
+    "tags": [],
+    "links": [],
+    "aliases": [],
+    "properties": {},
+    "created_at": 1768478400000,
+    "updated_at": 1768478400000
+  },
+  "failSave": false,
+  "failedSaves": 0,
+  "conflicts": 0,
+  "writes": [],
+  "mutations": [
+    "POST /api/auth/sync/hydrate",
+    "PATCH /api/user-preferences"
+  ],
+  "errors": [],
+  "warnings": [],
+  "forwardedOrigins": [
+    "http://127.0.0.1:5186"
+  ],
+  "expectedErrors": [],
+  "violations": [],
+  "expectedViolations": [],
+  "requests": [
+    "GET /api/auth/session",
+    "GET /api/auth/session",
+    "GET /api/auth/sync/status",
+    "GET /api/auth/sync/status",
+    "POST /api/auth/sync/hydrate",
+    "GET /api/user-preferences",
+    "PATCH /api/user-preferences",
+    "GET /api/hermes/runtime-config",
+    "GET /api/generated-modules",
+    "GET /api/cache",
+    "GET /api/mobile/devices",
+    "GET /api/secrets/bluebubbles",
+    "GET /api/secrets/hermes",
+    "GET /api/secrets/hermes-dashboard",
+    "GET /api/secrets/sunshine",
+    "GET /api/secrets/vnc",
+    "GET /api/secrets/agentsecrets",
+    "GET /api/secrets/agentshell",
+    "GET /api/status/active-config",
+    "GET /api/user-preferences",
+    "GET /api/homelab/config",
+    "GET /api/setup/status",
+    "GET /api/status",
+    "GET /api/auth/session",
+    "GET /api/approvals",
+    "GET /api/auth/session",
+    "GET /api/auth/sync/status",
+    "GET /api/mobile/devices",
+    "GET /api/secrets/bluebubbles",
+    "GET /api/secrets/hermes",
+    "GET /api/secrets/hermes-dashboard",
+    "GET /api/secrets/sunshine",
+    "GET /api/secrets/vnc",
+    "GET /api/secrets/agentsecrets",
+    "GET /api/secrets/agentshell",
+    "GET /api/status/active-config",
+    "GET /api/user-preferences",
+    "GET /api/homelab/config",
+    "GET /api/setup/status",
+    "GET /api/auth/session",
+    "GET /api/auth/sync/status",
+    "GET /api/auth/session",
+    "GET /api/secrets/proxmox",
+    "GET /api/secrets/opnsense",
+    "GET /api/secrets/portainer",
+    "GET /api/secrets/proxmox",
+    "GET /api/secrets/opnsense",
+    "GET /api/secrets/portainer",
+    "GET /api/auth/sync/status",
+    "GET /api/setup/status",
+    "GET /api/setup/status"
+  ],
+  "workspaceRequested": false,
+  "workspaceDelivered": false
+}
