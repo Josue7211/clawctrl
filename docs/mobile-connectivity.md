@@ -27,7 +27,10 @@ vault ownership and verifying migration/backup recovery; it is not provisioned h
 
 Keep the Rust listener's current loopback default. Use **existing HTTPS ingress**
 that reaches the owning backend, with valid certificates and the canonical `/api`
-paths. A proxy on another machine also needs a protected upstream connection;
+paths. Forward only GET `/api/mobile/capabilities`, GET
+`/api/vault/local/documents`, and GET/PUT `/api/vault/local/doc` for phone access.
+Owner/device-management and other desktop routes stay on the local control path.
+A proxy on another machine also needs a protected upstream connection;
 do not send device credentials over a clear-text LAN hop. This follows the bearer
 transport requirements in [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750.html#section-5.2).
 Browser-origin access needs an explicit `CORS_ALLOWED_ORIGINS` entry if it is not

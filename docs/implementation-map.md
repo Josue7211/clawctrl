@@ -5,7 +5,9 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Active work: **R05 Define mobile connectivity and platform capabilities**. R01–R04 are
+Next work: **I01 Select and prove the native client foundation**. R05’s connection
+implementation is verified; its real host/HTTPS check awaits the selected endpoint.
+I01 is independent of that input. R01–R04 are
 implemented and verified in their linked PRs; the completion ledger records CI
 and review evidence. The default first iOS workflow is creating, reading, and
 editing a note; quick capture creates a note in the same vault.
@@ -58,8 +60,8 @@ package available; record the exact prerequisite without marking the iOS work do
 | R02 | Execute backend tests in CI | None | Done |
 | R03 | Produce isolated feature review evidence | None | Done |
 | R04 | Define shared Notes API contracts | R01, R02 | Done |
-| R05 | Define mobile connectivity and platform capabilities | R01, R04 | Active |
-| I01 | Select and prove the native client foundation | R03 | Planned |
+| R05 | Define mobile connectivity and platform capabilities | R01, R04 | Waiting: chosen vault host/HTTPS origin and live-path proof; I01 proceeds independently |
+| I01 | Select and prove the native client foundation | R03 | Next |
 | I02 | Implement the online iPhone Notes workflow | I01, R04, R05 | Planned |
 | I03 | Preserve mobile edits offline and across retries | I02 | Planned |
 | I04 | Deliver and update the app through TestFlight | I02, I03 | Planned |
@@ -368,6 +370,8 @@ For each package or named slice, record:
 | R03 | `342854e`; [draft PR 66](https://github.com/Josue7211/clawctrl/pull/66), stacked on PR 65 | Six local repeat passes with matching Notes/Chat state; [browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41341591283/job/124952756290) passed all three scenarios. [Artifact](https://github.com/Josue7211/clawctrl/actions/runs/41341591283/artifacts/13097333461) downloaded and verified. Full local desktop gate passed (722 backend / 4,145 frontend tests). [Phone-readable reference media/results](reviews/r03-feature-review.md). Production bundle contains no review fixture markers. | Renderer-only; one intentional HTTP 503 diagnostic is classified separately and existing warnings remain visible. [Full macOS/Linux CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41342016295) at `f9ed6a7`. Artifacts expire after 14 days; reference media persists. R04 is next. |
 
 | R04 | `caf5a55`; [draft PR 67](https://github.com/Josue7211/clawctrl/pull/67), stacked on PR 66 | Final local `npm run check:all` passed: 728 backend / 4,147 frontend tests, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Two Node contract tests plus a deliberate generated-type drift rejection passed. Six real HTTP tests cover revisions, concurrent writes, durable replay/restart/delete, rollback, IDs, and route auth. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41346561908/job/124967889969) passed four scenarios; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41346561908/artifacts/13099711423) was downloaded and verified. [Screenshots, recording, and coverage](reviews/r04-notes-contract.md). | Full [macOS/Linux and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41347008908) at `2e553d6`. Migration 0029 adds retained receipts; [retry, rollback, and audit limitations](../shared/contracts/README.md). Other vault mutations retain existing concurrency behavior. Desktop drafts are local; no remote mobile auth, automatic merge, native iOS client, or mobile outbox yet. R05 is next. |
+
+| R05 connection implementation; live proof waiting | `ea31cde`; [draft PR 68](https://github.com/Josue7211/clawctrl/pull/68), stacked on PR 67 | Final local `npm run check:all` passed: 732 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Four real HTTP security tests use the production authentication stack and disposable SQLite; 50 focused frontend checks and all six browser scenarios passed. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/job/124987662541) passed; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/artifacts/13102236886) was downloaded and verified. [Phone-width screenshots, recordings, results, and limits](reviews/r05-mobile-connectivity.md). | Native [macOS/Linux CI](https://github.com/Josue7211/clawctrl/pull/68/checks) pending. R05 is **not Done**: confirm the existing vault owner/HTTPS origin and verify the intended live path, revocation, host sleep/offline and reconnect. Provisional host is the existing Mac; no infrastructure was provisioned. [Residency, scope, migration, and restore rules](mobile-connectivity.md). Native app/protected phone storage/outbox/TestFlight remain I01–I04. I01 is independent and Next. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.
