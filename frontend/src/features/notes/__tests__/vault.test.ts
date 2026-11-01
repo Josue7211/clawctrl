@@ -1771,6 +1771,11 @@ describe('vault notes', () => {
           ],
         },
       })
+      .mockResolvedValueOnce({ data: { notes: [{
+        _id: 'Legacy/project.md', _rev: 'local-30', type: 'note',
+        title: 'Project', content: '# Project', folder: 'Legacy', tags: ['legacy'],
+        links: [], created_at: 10, updated_at: 30,
+      }], attachments: [] } })
     apiMock.post.mockResolvedValue({ data: { imported_notes: 1, imported_folders: 1 } })
     const { getAllNotes, getAllFolders } = await loadVault()
 
@@ -1781,13 +1786,21 @@ describe('vault notes', () => {
       notes: [expect.objectContaining({ _id: 'Legacy/project.md', content: '# Project' })],
       folders: [expect.objectContaining({ path: 'Legacy' })],
     })
-    expect(notes).toEqual([expect.objectContaining({ _id: 'Legacy/project.md', folder: 'Legacy' })])
+    expect(notes).toEqual([expect.objectContaining({ _id: 'Legacy/project.md', _rev: 'local-30', folder: 'Legacy' })])
     expect(folders).toEqual([expect.objectContaining({ path: 'Legacy' })])
   })
 
   it('recovers legacy markdown bodies when the local vault contains only unsafe blank imports', async () => {
     apiMock.get.mockImplementation(async (path: string) => {
       if (path === '/api/vault/local/documents') {
+        if (apiMock.post.mock.calls.some(([url]) => url === '/api/vault/local/import')) {
+          return { data: { notes: ['one', 'two'].map((name, index) => ({
+            _id: `Legacy/${name}.md`, _rev: `local-${20 + index}`, type: 'note',
+            title: name, folder: 'Legacy', tags: [], links: [],
+            content: `# ${name === 'one' ? 'One' : 'Two'}\n\nRecovered from legacy markdown.`,
+            created_at: 1, updated_at: 20 + index,
+          })), attachments: [] } }
+        }
         return {
           data: {
             notes: [
@@ -2282,4 +2295,40 @@ describe('vault notes', () => {
       '[[Project Alpha|Alpha]] connects to delivery.',
     )
   })
+})
+
+
+describe('canonical note revision conflicts', () => {
+  it('retains the draft and rejects a stale save instead of reporting success', async () => {
+    const conflict = Object.assign(new Error('Note changed; reload before saving'), { status: 409 })
+    apiMock.put.mockRejectedValue(conflict)
+    const { putNote, getRecoverableDrafts } = await loadVault()
+    await expect(putNote({
+      _id: 'conflict.md', _rev: 'local-10', type: 'note', title: 'Conflict',
+      content: '# My pending edit', folder: '', tags: [], links: [], created_at: 1, updated_at: 10,
+    })).rejects.toBe(conflict)
+    expect(JSON.parse(localStorage.getItem('mc-notes-drafts') || '[]')).toEqual([
+      expect.objectContaining({ id: 'conflict.md', content: '# My pending edit' }),
+    ])
+    expect(getRecoverableDrafts()).toEqual([expect.objectContaining({ id: 'conflict.md' })])
+    expect(apiMock.post).not.toHaveBeenCalled()
+  })
+  it('keeps the original draft revision when newer server content arrives after restart', async () => {
+    localStorage.setItem('mc-notes-drafts', JSON.stringify([{
+      id: 'conflict.md', content: '# My pending edit', base_revision: 'local-10', updated_at: 15,
+    }]))
+    apiMock.get.mockResolvedValue({ data: { notes: [{
+      _id: 'conflict.md', _rev: 'local-20', type: 'note', title: 'Conflict',
+      content: '# Other client edit', folder: '', tags: [], links: [], created_at: 1, updated_at: 20,
+    }], attachments: [] } })
+    const { getAllNotes, putNote } = await loadVault()
+    const [note] = await getAllNotes()
+    expect(note.content).toBe('# My pending edit')
+    expect(note._rev).toBe('local-10')
+    apiMock.put.mockRejectedValue(Object.assign(new Error('conflict'), { status: 409 }))
+    await expect(putNote(note)).rejects.toThrow('conflict')
+    expect(apiMock.put).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ _rev: 'local-10' }))
+    expect(JSON.parse(localStorage.getItem('mc-notes-drafts') || '[]')[0].base_revision).toBe('local-10')
+  })
+
 })

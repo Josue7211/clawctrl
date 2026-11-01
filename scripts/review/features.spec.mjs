@@ -28,6 +28,31 @@ test('Notes preserves a draft through a controlled save failure', async ({ page,
   await capture(page, testInfo, 'notes-restored.png')
 })
 
+test('Notes retains a stale draft and shows the conflict', async ({ page, review }, testInfo) => {
+  await page.goto('/notes')
+  const editor = page.locator('[contenteditable=true]:visible').first()
+  await expect(editor).toContainText('A fixed sample note')
+  review.note = { ...review.note, _rev: `local-${NOTE.updated_at + 1}`, updated_at: NOTE.updated_at + 1, content: '# Review note\n\nEdited by another client.' }
+  await editor.fill('Review note\n\nMy draft must survive this conflict.')
+  await expect.poll(() => review.conflicts).toBeGreaterThan(0)
+  await expect(page.getByRole('button', { name: 'Note status', exact: true })).toContainText('Save failed')
+  await page.getByRole('button', { name: 'Note status', exact: true }).click()
+  await expect(page.getByText('Note changed; reload its current revision before saving', { exact: false }).first()).toBeVisible()
+  expect(review.note.content).toContain('Edited by another client')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('mc-notes-drafts'))).toContain('My draft must survive')
+  await capture(page, testInfo, 'notes-conflict.png')
+  await page.reload()
+  await expect(editor).toContainText('My draft must survive')
+  await editor.fill('Review note\n\nMy draft must survive this conflict and restart.')
+  await expect.poll(() => review.writes.at(-1)?.content).toContain('and restart.')
+  expect(review.writes.at(-1)._rev).toBe(NOTE._rev)
+  expect(review.note.content).toContain('Edited by another client')
+  await page.getByRole('button', { name: 'Note status', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Review queued edits', exact: false }).click()
+  await expect(page.getByText('Save failed: Note changed; reload its current revision before saving', { exact: true })).toBeVisible()
+  await capture(page, testInfo, 'notes-conflict-after-restart.png')
+})
+
 test('Chat keeps a cleared project after a late workspace response', async ({ page, review }, testInfo) => {
   let release
   review.workspaceGate = new Promise(resolve => { release = resolve })

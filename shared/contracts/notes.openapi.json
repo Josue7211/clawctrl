@@ -1,0 +1,687 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Clawctrl local Notes API",
+    "version": "1.0.0",
+    "description": "Device-local vault Notes CRUD contract. Notes quick capture uses this same create operation with a stable client-chosen ID. General /api/quick-capture inbox behavior is separate. An authenticated, MFA-verified server session is required in addition to the desktop API key; remote device authentication is defined in R05."
+  },
+  "security": [
+    {
+      "desktopApiKey": []
+    }
+  ],
+  "paths": {
+    "/api/vault/local/documents": {
+      "get": {
+        "operationId": "listNotes",
+        "responses": {
+          "200": {
+            "description": "NoteListResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vault/local/doc": {
+      "get": {
+        "operationId": "readNote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/NoteId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NoteReadResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteReadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "writeNote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/NoteId"
+            }
+          }
+        ],
+        "description": "Create if absent without _rev; update only with current _rev. Stable operation_id plus identical request body replays the original receipt without another write. Reusing an operation ID for a different request conflicts. IDs and revisions are opaque.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "NoteWriteResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteWriteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Authentication required",
+                    "Unauthorized: invalid or missing API key"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA verification required",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "MFA verification required"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ErrorResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request extraction rejected",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request extraction rejected",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request extraction rejected",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "desktopApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "NoteId": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096,
+        "allOf": [
+          {
+            "not": {
+              "pattern": "\\.\\."
+            }
+          },
+          {
+            "not": {
+              "pattern": "^_"
+            }
+          },
+          {
+            "not": {
+              "pattern": "\\u0000"
+            }
+          },
+          {
+            "pattern": "\\S"
+          }
+        ]
+      },
+      "NoteRevision": {
+        "type": "string",
+        "pattern": "^local-[0-9]+$",
+        "description": "Opaque current revision; retain exactly for the next conditional write."
+      },
+      "Timestamp": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Unix epoch milliseconds."
+      },
+      "OperationId": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^[A-Za-z0-9_.:-]+$"
+      },
+      "NoteDocument": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/NoteId"
+          },
+          "_rev": {
+            "$ref": "#/components/schemas/NoteRevision"
+          },
+          "type": {
+            "type": "string",
+            "const": "note"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "folder": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "trashed_at": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "trash_origin_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "_id",
+          "_rev",
+          "type",
+          "title",
+          "content",
+          "folder",
+          "tags",
+          "links",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "_id": "Workspace/Review note.md",
+            "_rev": "local-1768478400000",
+            "type": "note",
+            "title": "Review note",
+            "folder": "Workspace",
+            "content": "# Review note\n\nA fixed sample note for feature review.\n",
+            "tags": [],
+            "links": [],
+            "aliases": [],
+            "properties": {},
+            "created_at": 1768478400000,
+            "updated_at": 1768478400000
+          }
+        ]
+      },
+      "NoteWrite": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "$ref": "#/components/schemas/NoteId"
+          },
+          "_rev": {
+            "$ref": "#/components/schemas/NoteRevision"
+          },
+          "type": {
+            "type": "string",
+            "const": "note"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "folder": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "trashed_at": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "trash_origin_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content_json": {},
+          "operation_id": {
+            "$ref": "#/components/schemas/OperationId"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": true
+      },
+      "NoteListData": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteDocument"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "notes",
+          "attachments"
+        ],
+        "additionalProperties": false
+      },
+      "NoteWriteData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/NoteId"
+          },
+          "rev": {
+            "$ref": "#/components/schemas/NoteRevision"
+          }
+        },
+        "required": [
+          "id",
+          "rev"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "bad_request",
+              "not_found",
+              "conflict",
+              "internal_error",
+              "service_unavailable"
+            ]
+          }
+        },
+        "required": [
+          "ok",
+          "error",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "NoteListResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/NoteListData"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "NoteReadResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/NoteDocument"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "NoteWriteResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/NoteWriteData"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

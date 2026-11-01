@@ -31,6 +31,7 @@ pub enum AppError {
     Unauthorized,
     Forbidden(String),
     BadRequest(String),
+    Conflict(String),
     Internal(anyhow::Error),
 }
 
@@ -40,7 +41,7 @@ impl fmt::Display for AppError {
             AppError::NotFound(message) => write!(f, "{message}"),
             AppError::Unauthorized => f.write_str("Unauthorized"),
             AppError::Forbidden(message) => write!(f, "{message}"),
-            AppError::BadRequest(message) => write!(f, "{message}"),
+            AppError::BadRequest(message) | AppError::Conflict(message) => write!(f, "{message}"),
             AppError::Internal(error) => write!(f, "{error}"),
         }
     }
@@ -57,6 +58,7 @@ impl IntoResponse for AppError {
             ),
             AppError::Forbidden(m) => (StatusCode::FORBIDDEN, "forbidden", m),
             AppError::BadRequest(m) => (StatusCode::BAD_REQUEST, "bad_request", m),
+            AppError::Conflict(m) => (StatusCode::CONFLICT, "conflict", m),
             AppError::Internal(e) => {
                 tracing::error!("internal error: {e:?}");
                 return (
