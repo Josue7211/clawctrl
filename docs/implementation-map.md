@@ -5,7 +5,7 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Next work: **R03 Produce isolated feature review evidence**. R01 and R02 are
+Current active work: **R03 Produce isolated feature review evidence**. R01 and R02 are
 implemented and verified in their linked PRs; the completion ledger records CI
 and review evidence. The default first iOS workflow is creating, reading, and
 editing a note; quick capture creates a note in the same vault.
@@ -56,7 +56,7 @@ package available; record the exact prerequisite without marking the iOS work do
 | --- | --- | --- | --- |
 | R01 | Protect development sessions | None | Done |
 | R02 | Execute backend tests in CI | None | Done |
-| R03 | Produce isolated feature review evidence | None | Next |
+| R03 | Produce isolated feature review evidence | None | Active |
 | R04 | Define shared Notes API contracts | R01, R02 | Planned |
 | R05 | Define mobile connectivity and platform capabilities | R01, R04 | Planned |
 | I01 | Select and prove the native client foundation | R03 | Planned |
@@ -142,9 +142,10 @@ Include appropriate Rust formatting/lint validation and useful build caching.
 
 ### R03 Produce isolated feature review evidence
 
-**Owner:** `frontend/src/lib/demo-data.ts`, existing feature fixtures/tests,
-`scripts/`, and `.github/workflows/checks.yml`. A review runner under `scripts/`
-and fixture scenarios are **proposed** additions.
+**Owner:** `playwright.config.mjs`, `scripts/review/`, `.github/workflows/checks.yml`,
+and the Notes/Chat feature guides. [Feature review](feature-review.md) documents
+the runner and its fixture ownership. Fixture transport stays in the test browser;
+the ordinary frontend and Rust data owners remain authoritative.
 
 **First slice:** launch Notes with fixed sample data and a controlled save failure.
 Produce a screenshot, a short interaction recording, and browser-error results
@@ -361,6 +362,8 @@ For each package or named slice, record:
 | R01 | `c18909b`; [draft PR 64](https://github.com/Josue7211/clawctrl/pull/64), stacked on PR 63 | Full local `npm run check:all` passed: 11 backend session regressions, 4,145 frontend tests, architecture/type/dead-code checks, production build, bundle budget, and Rust compilation. Native macOS credential-store smoke and isolated live browser logout/reload passed; zero browser errors. [Screenshots and coverage limits](reviews/r01-session-security.md). macOS/Linux CI passed in [run 41245943921](https://github.com/Josue7211/clawctrl/actions/runs/41245943921) at `c932af1`. | One fresh login after legacy plaintext cleanup; unavailable protected storage requires login after restart. Historical backups are outside cleanup. No signed native cold-restart claim. R02 is next; full backend execution and CI caching remain there. |
 
 | R02 | `47f2e4a`; [draft PR 65](https://github.com/Josue7211/clawctrl/pull/65), stacked on PR 64 | Full local gate and [macOS/Linux CI](https://github.com/Josue7211/clawctrl/actions/runs/41249725389) passed: 722 backend and 4,145 frontend tests per platform, formatting, selected Clippy gates, build/budget/type/architecture/dead-code/Rust checks. Earlier backend failures propagated exit 101. Both platform caches saved. Live browser smoke: zero errors. [Review evidence](reviews/r02-backend-ci.md); [test inventory](backend-testing.md). | Two explicit opt-ins remain separate; style/performance lint warnings remain visible. Cache reuse follows branch/ref scope; warm-run timings unmeasured. No new data migration. R03 is next. |
+
+| R03 | In progress | Three renderer review scenarios passed twice locally: Notes failed-save/reload/re-save, Chat late workspace selection, and network isolation. Full local desktop gate passed: 722 backend and 4,145 frontend tests plus formatting/lint/build/budget/type/architecture checks. CI artifact verification pending. | Final validation and published review evidence pending. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.

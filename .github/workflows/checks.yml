@@ -70,3 +70,45 @@ jobs:
 
       - name: Verify desktop app
         run: npm run check:all
+
+  review:
+    name: Isolated feature review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm run setup
+
+      - name: Install review browser
+        run: npm run review:install
+
+      - name: Review Notes, Chat, and network isolation
+        run: npm run review:features
+
+      - name: Upload screenshots, recordings, and diagnostics
+        id: evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-review-${{ github.run_attempt }}
+          path: |
+            review-results/
+            review-report/
+          retention-days: 14
+
+      - name: Link review evidence
+        if: always() && steps.evidence.outputs.artifact-url != ''
+        env:
+          REVIEW_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
+        run: printf '[Feature screenshots, recordings, and browser results](%s)\n' "$REVIEW_ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"

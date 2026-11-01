@@ -1,0 +1,27 @@
+# R03 reference review
+
+Generated with `npm run review:features` using the real React frontend and disposable browser fixtures. [Runner and coverage guide](../feature-review.md). Source revision and CI evidence are recorded in the [implementation ledger](../implementation-map.md#verification-and-completion-ledger).
+
+Three scenarios passed twice locally. Notes/Chat recorded zero unexpected browser errors and zero unmodeled requests. The intentional Notes HTTP 503 diagnostic is reported separately. The network guard case verified exactly three deliberate blocks. The complete local desktop gate passed (722 backend / 4,145 frontend tests, formatting/lint, build, budgets, and compilation). The HTML report and its video playback were inspected through agent-browser at a 390px viewport. [Structured reference results](r03-results.json).
+
+## Notes: failure and recovery
+
+![Fixed sample note](r03-notes-before.png)
+
+![Edit retained after the fixture rejects the backend save](r03-notes-save-failure.png)
+
+![Edit still present after reloading while save failure remains active](r03-notes-recovered-local.png)
+
+![Fixture backend accepted the recovered edit after availability returned](r03-notes-restored.png)
+
+[Short Notes interaction recording (WebM)](r03-notes.webm).
+
+## Chat: late workspace response
+
+![Project cleared while the response is held](r03-chat-cleared-before-response.png)
+
+![Projects populated without restoring the cleared selection](r03-chat-after-late-response.png)
+
+[Short Chat interaction recording (WebM)](r03-chat.webm).
+
+This is desktop renderer evidence. Native service/IPC behavior and iOS delivery require their own checks. These reference images use fallback fonts so the review never fetches external font services.

@@ -1,0 +1,52 @@
+{
+  "Notes": {
+    "errors": [],
+    "expectedErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "violations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "failedSaves": 2,
+    "finalNote": {
+      "_id": "Workspace/Review note.md",
+      "_rev": "2-fixture",
+      "type": "note",
+      "title": "Review note",
+      "content": "# Review note\n\nThis edit survives a failed save. Recovered after reconnect.",
+      "folder": "Workspace",
+      "tags": [],
+      "links": [],
+      "aliases": [],
+      "properties": {},
+      "created_at": 1768478400000,
+      "updated_at": 1768478400000,
+      "trashed_at": null,
+      "trash_origin_path": null
+    }
+  },
+  "Chat": {
+    "errors": [],
+    "expectedErrors": [],
+    "violations": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ],
+    "failedSaves": 0
+  },
+  "Network guard": {
+    "errors": [],
+    "violations": [
+      "POST /api/unmodeled at http://127.0.0.1:5186",
+      "GET /api/auth/session at https://blocked.invalid",
+      "WebSocket ws://blocked.invalid/unmodeled"
+    ],
+    "expectedViolations": [
+      "POST /api/unmodeled at http://127.0.0.1:5186",
+      "GET /api/auth/session at https://blocked.invalid",
+      "WebSocket ws://blocked.invalid/unmodeled"
+    ],
+    "forwardedOrigins": []
+  }
+}
