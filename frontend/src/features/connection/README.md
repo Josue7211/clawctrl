@@ -16,7 +16,11 @@ and rejected states without storing secrets in browser storage.
 - Rust `routes/mobile.rs`: credential owner, scope guard, capabilities, and Notes
   principal; `vault_note_write.rs` rechecks revocation inside the write transaction.
 
-Use the existing vault-owning computer. Phone access needs that host awake and its
+Vault ownership remains undecided; Supabase does not replicate local Notes tables.
+Resolve data ownership and native transport before choosing a host. See the
+[bug register](../../../../docs/bug-register.md) and
+[residency guide](../../../../docs/mobile-connectivity.md).
+Phone access needs the selected host awake and its
 backend reachable through existing HTTPS ingress. A host choice and real-device
 proof must be recorded in the implementation map. This package provisions no
 server, proxy, DNS, or tunnel, and copies no vault. A headless backend can run the

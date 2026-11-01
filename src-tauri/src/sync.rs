@@ -144,11 +144,7 @@ impl SyncEngine {
         for (log_id, table, row_id, operation, payload) in &pending {
             // Validate table name against allowlist
             if !SYNC_TABLES.contains(&table.as_str()) {
-                tracing::warn!("sync: skipping unknown table in _sync_log: {table}");
-                sqlx::query("UPDATE _sync_log SET synced_at = unixepoch() WHERE id = ?")
-                    .bind(log_id)
-                    .execute(&self.db)
-                    .await?;
+                warn!("sync: unsupported table {table}; keeping pending mutation {log_id}");
                 continue;
             }
 
@@ -162,19 +158,22 @@ impl SyncEngine {
                 || row_id.contains('.')
                 || row_id.contains(',')
             {
-                tracing::warn!("sync: skipping invalid row_id in _sync_log: {row_id}");
-                sqlx::query("UPDATE _sync_log SET synced_at = unixepoch() WHERE id = ?")
-                    .bind(log_id)
-                    .execute(&self.db)
-                    .await?;
+                warn!("sync: invalid row ID; keeping pending mutation {log_id} for {table}");
                 continue;
             }
 
             let result = match operation.as_str() {
                 "INSERT" | "UPDATE" => {
                     if let Some(data) = payload {
-                        let body: Value = serde_json::from_str(data)
-                            .map_err(|e| anyhow::anyhow!("bad sync payload: {e}"))?;
+                        let body: Value = match serde_json::from_str(data) {
+                            Ok(body) => body,
+                            Err(_) => {
+                                // A bad entry must neither be acknowledged nor
+                                // prevent unrelated valid entries from uploading.
+                                warn!("sync: malformed payload; keeping pending mutation {log_id} for {table}");
+                                continue;
+                            }
+                        };
                         client.upsert_as_user(table, body, jwt).await.map(|_| ())
                     } else {
                         continue;
@@ -492,8 +491,8 @@ pub async fn is_supabase_reachable(supabase_url: &str, service_key: &str) -> boo
 /// Log a mutation to `_sync_log` so the sync engine can push it to Supabase.
 ///
 /// Call this after every local SQLite INSERT/UPDATE/DELETE on a synced table.
-/// Caps the log at 10,000 unsynced entries — if exceeded, the oldest 1,000 are
-/// deleted to prevent unbounded growth.
+/// Pending entries must survive outages regardless of queue size. Capacity
+/// management must never discard edits that have not reached the remote store.
 pub async fn log_mutation(
     db: &SqlitePool,
     table: &str,
@@ -501,23 +500,6 @@ pub async fn log_mutation(
     operation: &str,
     payload: Option<&str>,
 ) -> Result<(), sqlx::Error> {
-    // Cap unbounded growth: if > 10,000 unsynced entries, delete the oldest 1,000
-    let unsynced_count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM _sync_log WHERE synced_at IS NULL")
-            .fetch_one(db)
-            .await
-            .unwrap_or(0);
-
-    if unsynced_count > 10_000 {
-        sqlx::query(
-            "DELETE FROM _sync_log WHERE id IN \
-             (SELECT id FROM _sync_log WHERE synced_at IS NULL ORDER BY id ASC LIMIT 1000)",
-        )
-        .execute(db)
-        .await?;
-        warn!("_sync_log: pruned 1000 oldest unsynced entries (had {unsynced_count})");
-    }
-
     sqlx::query(
         "INSERT INTO _sync_log (table_name, row_id, operation, payload) VALUES (?, ?, ?, ?)",
     )
@@ -533,6 +515,154 @@ pub async fn log_mutation(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    async fn outbox_db(path: &std::path::Path) -> SqlitePool {
+        let db = sqlx::sqlite::SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(
+                sqlx::sqlite::SqliteConnectOptions::new()
+                    .filename(path)
+                    .create_if_missing(true),
+            )
+            .await
+            .unwrap();
+        // Exercise the actual queue schema without opening a user's data root.
+        sqlx::raw_sql(include_str!("../migrations/0003_sync_tables.sql"))
+            .execute(&db)
+            .await
+            .unwrap();
+        db
+    }
+
+    async fn outbox_snapshot(db: &SqlitePool) -> Vec<(String, String, Option<i64>)> {
+        sqlx::query_as("SELECT row_id, payload, synced_at FROM _sync_log ORDER BY id")
+            .fetch_all(db)
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn unsupported_and_invalid_rows_remain_pending_after_restart() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("outbox.db");
+        let db = outbox_db(&path).await;
+        for (table, id) in [("career_profiles", "profile-1"), ("todos", "invalid.id")] {
+            log_mutation(&db, table, id, "UPDATE", Some("{\"id\":\"fixture\"}"))
+                .await
+                .unwrap();
+        }
+        let before = outbox_snapshot(&db).await;
+        let engine = SyncEngine::new(db.clone(), String::new(), String::new(), Arc::default());
+        // Neither rejected row may trigger an HTTP request or be acknowledged.
+        let client = SupabaseClient::new("http://127.0.0.1:1", "fixture-key");
+        engine.push(&client, "fixture-jwt").await.unwrap();
+        drop(engine);
+        db.close().await;
+
+        let reopened = outbox_db(&path).await;
+        let after = outbox_snapshot(&reopened).await;
+        reopened.close().await;
+        assert_eq!(after, before, "unuploaded changes must survive unchanged");
+        assert!(after.iter().all(|(_, _, synced)| synced.is_none()));
+    }
+
+    #[tokio::test]
+    async fn outbox_keeps_oldest_unsent_changes_above_previous_limit() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("outbox.db");
+        let db = outbox_db(&path).await;
+        sqlx::query(
+            "WITH RECURSIVE n(value) AS (SELECT 1 UNION ALL SELECT value+1 FROM n WHERE value<10001) \
+             INSERT INTO _sync_log (table_name,row_id,operation,payload) \
+             SELECT 'todos', printf('row-%d',value), 'UPDATE', '{\"id\":\"fixture\"}' FROM n",
+        )
+        .execute(&db)
+        .await
+        .unwrap();
+        log_mutation(
+            &db,
+            "todos",
+            "newest",
+            "UPDATE",
+            Some("{\"id\":\"newest\"}"),
+        )
+        .await
+        .unwrap();
+        db.close().await;
+
+        let reopened = outbox_db(&path).await;
+        let rows = outbox_snapshot(&reopened).await;
+        reopened.close().await;
+        assert_eq!(
+            rows.len(),
+            10002,
+            "queue pressure must not delete unsent edits"
+        );
+        assert_eq!(rows.first().unwrap().0, "row-1");
+        assert_eq!(rows.last().unwrap().0, "newest");
+        assert!(rows.iter().all(|(_, _, synced)| synced.is_none()));
+    }
+
+    #[tokio::test]
+    async fn malformed_payload_does_not_block_later_uploads_and_http_failures_retry() {
+        use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+        use std::sync::Mutex;
+
+        let requests = Arc::new(Mutex::new(Vec::<Value>::new()));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let app = Router::new()
+            .route(
+                "/rest/v1/todos",
+                post(
+                    |State(requests): State<Arc<Mutex<Vec<Value>>>>,
+                     headers: axum::http::HeaderMap,
+                     Json(body): Json<Value>| async move {
+                        assert_eq!(headers["authorization"], "Bearer fixture-jwt");
+                        assert_eq!(headers["apikey"], "fixture-key");
+                        requests.lock().unwrap().push(body.clone());
+                        if body["id"] == "retry" {
+                            (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({})))
+                        } else {
+                            (StatusCode::CREATED, Json(serde_json::json!([body])))
+                        }
+                    },
+                ),
+            )
+            .with_state(requests.clone());
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        let temp = tempfile::tempdir().unwrap();
+        let db = outbox_db(&temp.path().join("outbox.db")).await;
+        for (id, payload) in [
+            ("broken", "{not-json"),
+            ("retry", "{\"id\":\"retry\"}"),
+            ("accepted", "{\"id\":\"accepted\"}"),
+        ] {
+            log_mutation(&db, "todos", id, "UPDATE", Some(payload))
+                .await
+                .unwrap();
+        }
+        let engine = SyncEngine::new(db.clone(), String::new(), String::new(), Arc::default());
+        let client = SupabaseClient::new(&format!("http://{address}"), "fixture-key");
+        let first = engine.push(&client, "fixture-jwt").await;
+        let second = engine.push(&client, "fixture-jwt").await;
+        server.abort();
+        first.unwrap();
+        second.unwrap();
+        let rows = outbox_snapshot(&db).await;
+        assert!(rows[0].2.is_none(), "malformed payload is not synced");
+        assert!(rows[1].2.is_none(), "HTTP failure remains retryable");
+        assert!(rows[2].2.is_some_and(|timestamp| timestamp > 0));
+        let ids: Vec<_> = requests
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|row| row["id"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(ids, ["retry", "accepted", "retry"]);
+        drop(engine);
+        db.close().await;
+    }
 
     #[test]
     fn sync_tables_not_empty() {

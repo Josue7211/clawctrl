@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context};
-use reqwest::{Client, StatusCode};
+use reqwest::Client;
 use serde_json::Value;
 use tracing::warn;
 
@@ -547,7 +547,8 @@ impl SupabaseClient {
             .context("supabase rpc: failed to parse JSON")
     }
 
-    /// Check whether the client can reach Supabase. Returns `true` on success.
+    /// Check whether the REST root responds successfully with these credentials.
+    /// This is not a check of individual tables, schemas, or RLS policies.
     pub async fn health_check(&self) -> bool {
         let url = format!("{}/rest/v1/", self.url);
         match self
@@ -556,7 +557,7 @@ impl SupabaseClient {
             .send()
             .await
         {
-            Ok(resp) => resp.status() != StatusCode::UNAUTHORIZED,
+            Ok(resp) => resp.status().is_success(),
             Err(_) => false,
         }
     }
@@ -565,6 +566,35 @@ impl SupabaseClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn health_check_rejects_http_errors() {
+        for status in [200, 401, 403, 404, 429, 500, 502, 503, 530] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let app = axum::Router::new().route(
+                "/rest/v1/",
+                axum::routing::get(move |headers: axum::http::HeaderMap| async move {
+                    assert_eq!(headers["apikey"], "test-key");
+                    assert_eq!(headers["authorization"], "Bearer test-key");
+                    (
+                        axum::http::StatusCode::from_u16(status).unwrap(),
+                        axum::Json(serde_json::json!({})),
+                    )
+                }),
+            );
+            let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+            let healthy = test_client(&format!("http://{address}"))
+                .health_check()
+                .await;
+            server.abort();
+            assert_eq!(
+                healthy,
+                status == 200,
+                "unexpected health for HTTP {status}"
+            );
+        }
+    }
 
     fn test_client(url: &str) -> SupabaseClient {
         SupabaseClient::new(url, "test-key")

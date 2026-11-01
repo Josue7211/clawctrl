@@ -3,6 +3,7 @@
 Use this map to find an existing implementation before creating a new path.
 Use the [implementation map](implementation-map.md) for work order, dependencies,
 acceptance checks, and completion status.
+Confirmed defects and workflow checks live in the [bug register](bug-register.md).
 macOS and Linux share the React frontend and Rust backend. iOS is a required
 additional client and does not yet have a viable implementation. Feature README
 files hold their scope, verification, and remaining organization work.

@@ -22,6 +22,7 @@ The R02 starting inventory discovers 724 library tests on macOS: 722 determinist
 | Parsing, serialization, validation, permission decisions, redaction, cryptography, service catalogs | Pure fixtures; no configured services |
 | Session persistence/lifecycle, audit/cache behavior, local Notes and workspace data | In-memory or disposable SQLite and temporary files |
 | Proxmox retries/actions, VNC handshake/proxy, auth-provider behavior | Ephemeral loopback HTTP/TCP servers and fake credentials |
+| Supabase health and sync integrity | Loopback HTTP error/success fixtures, temporary SQLite queue files, retry and reopen checks; [Q00 review](reviews/r06-sync-integrity.md) |
 | Workspace Git metadata and project mutations | Temporary local Git repositories with fixture author identity; no remote fetch/push |
 | Local provider execution, runtime bridges, command cancellation/output limits | Temporary shell executables, the installed Node runtime, disposable working directories |
 | Commands/Chat environment overrides | Scoped restoration plus serial test execution; no personal credentials required |

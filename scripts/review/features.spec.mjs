@@ -141,3 +141,27 @@ test('Desktop creates and revokes a Notes-only device credential', async ({ page
   expect(review.devices[0].revoked_at).toBeTruthy()
   await capture(page, testInfo, 'device-revoked.png')
 })
+
+test('Settings distinguishes an offline provider from a ready backend and recovers', async ({ page, review }, testInfo) => {
+  review.setupStatus = {
+    ok: true, pairing_required: false, capabilities: {}, missing: [],
+    services: Object.fromEntries(['supabase', 'harness', 'agentsecrets', 'memd', 'bluebubbles', 'mac_bridge']
+      .map(name => [name, { configured: true, reachable: name !== 'supabase' }])),
+  }
+  await page.goto('/settings?section=connections')
+  await expect(page.getByText('Backend reachable, some core services still need work', { exact: true })).toBeVisible()
+  await expect(page.getByText('Supabase configured but offline', { exact: false })).toBeVisible()
+  await expect(page.getByText('Backend ready', { exact: true })).toHaveCount(0)
+  await capture(page, testInfo, 'supabase-offline.png')
+
+  review.setupStatus.services.supabase.reachable = true
+  await page.getByRole('button', { name: 'Check Server', exact: true }).click()
+  await expect(page.getByText('Backend ready', { exact: true })).toBeVisible()
+  await expect(page.getByText('Supabase online', { exact: false })).toBeVisible()
+  await capture(page, testInfo, 'supabase-recovered.png')
+
+  review.setupStatus.services.supabase.reachable = false
+  await page.getByRole('button', { name: 'Check Server', exact: true }).click()
+  await expect(page.getByText('Supabase configured but offline', { exact: false })).toBeVisible()
+  await expect(page.getByText('Backend ready', { exact: true })).toHaveCount(0)
+})

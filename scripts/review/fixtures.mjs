@@ -16,6 +16,7 @@ export const PROJECT = {
 export const test = base.extend({
   review: [async ({ context, page }, use, testInfo) => {
     const state = {
+      setupStatus: null,
       mobileState: 'online', mobileFailures: 0, mobileRejections: 0, devices: [],
       note: structuredClone(NOTE), failSave: false, failedSaves: 0, conflicts: 0,
       writes: [], mutations: [], errors: [], warnings: [], forwardedOrigins: [], expectedErrors: [], violations: [], expectedViolations: [], requests: [],
@@ -138,7 +139,7 @@ export const test = base.extend({
         '/api/homelab/config': { ok: true, data: null },
         '/api/health': { status: 'ok' },
         '/api/auth/session': { authenticated: true, user: { id: 'review-user', email: 'review@example.test' }, mfa_verified: true },
-        '/api/setup/status': { ok: true, pairing_required: false, capabilities: {}, services: Object.fromEntries(['supabase', 'harness', 'agentsecrets', 'memd', 'bluebubbles', 'mac_bridge'].map(name => [name, { configured: false, reachable: false }])) },
+        '/api/setup/status': state.setupStatus ?? { ok: true, pairing_required: false, capabilities: {}, services: Object.fromEntries(['supabase', 'harness', 'agentsecrets', 'memd', 'bluebubbles', 'mac_bridge'].map(name => [name, { configured: false, reachable: false }])) },
         '/api/auth/sync/status': { ready: true, has_cached_key: true, requires_unlock: false, has_synced_services: false, needs_recovery_key: false },
         '/api/user-preferences': { ok: true, data: {} },
         '/api/generated-modules': { modules: [] },
