@@ -901,19 +901,12 @@ export function useNotesWorkspace() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setTopBarMenu(null)
     }
-    const closeOnOutsidePointer = (event: MouseEvent | PointerEvent) => {
-      const target = event.target
-      if (target instanceof Node && topBarRef.current?.contains(target)) return
-      setTopBarMenu(null)
-    }
-
+    // TopBarMenuButton owns pointer dismissal, including its portalled menu.
+    // A second listener here treated menu actions as outside clicks and removed
+    // them before the browser could dispatch click.
     document.addEventListener('keydown', closeOnEscape)
-    document.addEventListener('pointerdown', closeOnOutsidePointer)
-    document.addEventListener('mousedown', closeOnOutsidePointer)
     return () => {
       document.removeEventListener('keydown', closeOnEscape)
-      document.removeEventListener('pointerdown', closeOnOutsidePointer)
-      document.removeEventListener('mousedown', closeOnOutsidePointer)
     }
   }, [topBarMenu])
 
@@ -5201,7 +5194,7 @@ export function useNotesWorkspace() {
   const saveDetail = selected?.type !== 'note'
     ? 'Select a note to save edits.'
     : saveState === 'error'
-      ? 'Queued edits are still local. Retry the queued save when the backend is available.'
+      ? `Queued edits are still local. ${saveErrorByNoteId[selected._id] || 'Retry the queued save when the backend is available.'}`
       : 'Autosaves after edits; manual save also creates a checkpoint when changed.'
 
   const queuedEditDetail = !networkOnline

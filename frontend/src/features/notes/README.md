@@ -26,6 +26,12 @@ Legacy vault routes exist for explicit import and compatibility reads; failed
 local writes must not silently switch to another owner. Preserve note IDs,
 storage keys, sync formats, routes, and keyboard behavior during extraction.
 
+The [shared Notes contract](../../../../shared/contracts/README.md) defines list,
+read, create/update, conditional revisions, and durable retry acknowledgements.
+Wire types are generated; conflicts retain the local draft and its original base
+revision across restart. Remote mobile auth and the iOS client remain separate
+implementation packages.
+
 ## Verify
 
 From repository root:

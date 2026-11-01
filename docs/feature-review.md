@@ -21,10 +21,11 @@ Open the generated responsive HTML report locally with `npm run review:report`. 
 | Scenario | Interaction and assertions |
 | --- | --- |
 | Notes save failure | Open a fixed sample note, edit it, inject HTTP 503 for its canonical local-vault PUT, verify the fixture backend still has the original and a recovery draft is stored, reload while failure remains active, verify the edit survives, restore availability and edit again, verify the fixture backend receives the new content and the draft clears |
+| Notes conflict/restart | Change the fixture server revision after load, edit, verify explicit failure and retained draft, reload and edit again, verify the original revision is still sent and the server edit survives |
 | Chat late workspace response | Assert the cached sample project is selected, hold the workspace response, clear the project through the actual selector before delivery, release the response, verify the project list populates while selection/storage/URL remain unscoped |
 | Network isolation | Attempt an unmodeled local API mutation, an external HTTP request, and an external WebSocket; verify all are intercepted and match the exact expected rejection list |
 
-The failure scenario reports the browser's intentional HTTP 503 diagnostic separately. **Unexpected console/page errors must be zero.** Existing editor warnings and the expected local-draft warning are recorded, not hidden. Notes currently handles an unavailable canonical write by retaining a browser-local draft; this scenario verifies that behavior rather than claiming a native SQLite save succeeded.
+The failure scenarios report the intentional HTTP 503/409 diagnostics and the precise injected-conflict autosave error separately. **Unexpected console/page errors must be zero.** Existing editor warnings and the expected local-draft warning are recorded, not hidden. Notes currently handles an unavailable canonical write by retaining a browser-local draft; this scenario verifies that behavior rather than claiming a native SQLite save succeeded.
 
 The date, timezone, locale, viewport, note, and project are fixed. Successful feature scenarios must have no unmodeled requests. The guard scenario declares exactly three expected rejections and fails on any others. Videos can differ in duration and platform fonts can differ; this is stable behavior/data evidence, not a cross-platform pixel baseline.
 
@@ -35,7 +36,7 @@ The date, timezone, locale, viewport, note, and project are fixed. Successful fe
 - `scripts/review/fixtures.mjs` owns sample records and explicit method/path responses. Every API call is fulfilled inside the browser, including the existing client's loopback desktop API paths. Only GET/HEAD frontend assets and HMR may continue to the dedicated loopback Vite server. Unknown origins, API reads/writes, and WebSockets are blocked and fail verification.
 - `scripts/review/features.spec.mjs` owns the visible interactions and assertions. Service workers are blocked. Each browser context starts empty; reload keeps only that scenario's disposable browser storage.
 
-Fixture transport is not imported by production frontend code and has no production runtime toggle. It does not call the user's configured services or write real notes/projects. The app's general demo data remains its own existing UI behavior; review fixtures are test-only records. R04 will validate the shared Notes API contract against these fixtures as that contract is introduced.
+Fixture transport is not imported by production frontend code and has no production runtime toggle. It does not call the user's configured services or write real notes/projects. The app's general demo data remains its own existing UI behavior; review fixtures are test-only records. R04 validates each modeled Notes request and response against `shared/contracts/notes.openapi.json`; the sample note comes from that contract.
 
 ## Review from a phone
 

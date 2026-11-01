@@ -1,19 +1,10 @@
-export interface VaultNote {
-  _id: string
+import type { components } from './notes-api.generated'
+
+// The wire document is generated; these fields belong only to local UI/cache state.
+export interface VaultNote extends Omit<components['schemas']['NoteDocument'], '_rev' | 'type'> {
   _rev?: string
   type: 'note' | 'attachment'
-  title: string
-  content: string
   content_status?: 'cached_title_only' | 'confirmed_blank'
-  folder: string
-  tags: string[]
-  links: string[]
-  aliases?: string[]
-  properties?: Record<string, string | string[]>
-  created_at: number
-  updated_at: number
-  trashed_at?: number | null
-  trash_origin_path?: string | null
 }
 
 export interface VaultFolder {

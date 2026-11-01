@@ -1,3 +1,4 @@
+import type { components } from '@/features/notes/notes-api.generated'
 import type { VaultFolder, VaultNote } from '@/features/notes/types'
 import { api } from '@/lib/api'
 
@@ -43,6 +44,8 @@ interface FolderMeta {
 }
 
 interface NoteDraft {
+  // The version this draft was based on; never replace it during a refresh.
+  base_revision?: string
   id: string
   content: string
   updated_at: number
@@ -427,7 +430,9 @@ function saveDraftCache(drafts: Map<string, NoteDraft>) {
 
 export function saveLocalDraft(id: string, content: string) {
   const drafts = loadDraftCache()
-  drafts.set(id, { id, content, updated_at: Date.now() })
+  const previous = drafts.get(id)
+  const base_revision = previous ? previous.base_revision : notesCache.get(id)?._rev
+  drafts.set(id, { id, content, base_revision, updated_at: Date.now() })
   saveDraftCache(drafts)
 }
 
@@ -455,13 +460,14 @@ function clearLocalDraft(id: string) {
 function applyLocalDraft(note: VaultNote): VaultNote {
   if (note.type !== 'note') return note
   const draft = loadDraftCache().get(note._id)
-  if (!draft || (draft.updated_at < note.updated_at && note.content)) return note
-  if (draft.content.length === 0 && note.content.length > 0) {
+  if (!draft || (!draft.base_revision && draft.updated_at < note.updated_at && note.content)) return note
+  if (!draft.base_revision && draft.content.length === 0 && note.content.length > 0) {
     clearLocalDraft(note._id)
     return note
   }
   return {
     ...note,
+    _rev: draft.base_revision,
     content: draft.content,
     content_status: draft.content.length > 0 ? undefined : note.content_status,
     updated_at: draft.updated_at,
@@ -661,10 +667,10 @@ function attachmentRecordToNote(att: Record<string, unknown>): VaultNote | null 
 // --- Sync via backend proxy ---
 
 async function fetchAllFromBackend(): Promise<NotesFetchResult> {
-  let json: any
+  let json: components['schemas']['NoteListResponse']
   let localOk = false
   try {
-    json = await api.get<any>(`${LOCAL_VAULT_PREFIX}/documents`)
+    json = await api.get<components['schemas']['NoteListResponse']>(`${LOCAL_VAULT_PREFIX}/documents`)
     localOk = true
   } catch (err) {
     console.warn('[vault] local document list failed, using local cache:', err)
@@ -710,7 +716,7 @@ async function hydrateEmptyNoteBodies(notes: VaultNote[]): Promise<VaultNote[]> 
   const failed = new Set<string>()
   await Promise.all(candidates.map(async (note) => {
     try {
-      const result = await api.get<any>(`${LOCAL_VAULT_PREFIX}/doc?id=${encodeURIComponent(note._id)}`)
+      const result = await api.get<components['schemas']['NoteReadResponse']>(`${LOCAL_VAULT_PREFIX}/doc?id=${encodeURIComponent(note._id)}`)
       const payload = result?.data || result || {}
       const fullNote = docToNote(payload)
       if (fullNote._id === note._id) {
@@ -775,7 +781,10 @@ async function importLegacyVaultIfPresent(): Promise<VaultNote[]> {
       for (const folder of folderListToMap(importedFolders).values()) foldersCache.set(folder.path, folder)
       saveFolderCache(foldersCache)
     }
-    return legacyNotes
+    // CouchDB revisions cannot authorize SQLite writes. Read the canonical
+    // documents after import before exposing them as editable notes.
+    const canonical = await api.get<components['schemas']['NoteListResponse']>(`${LOCAL_VAULT_PREFIX}/documents`)
+    return canonical.data.notes.map(docToNote).filter(note => !isInternalDoc(note._id))
   } catch (err) {
     console.warn('[vault] legacy vault import skipped:', err)
     return []
@@ -891,7 +900,7 @@ export async function restoreLocalDraft(id: string): Promise<VaultNote> {
   if (!draft) throw new Error('Draft not found')
   const note = notesCache.get(id)
   if (!note || note.type === 'attachment') throw new Error('Note not found')
-  return putNote({ ...note, content: draft.content, updated_at: draft.updated_at })
+  return putNote({ ...note, _rev: draft.base_revision, content: draft.content, updated_at: draft.updated_at })
 }
 
 export async function putNote(note: VaultNote): Promise<VaultNote> {
@@ -915,14 +924,16 @@ export async function putNote(note: VaultNote): Promise<VaultNote> {
   }
 
   let remoteSaved = false
+  let conflict: unknown
   try {
-    const body: Record<string, unknown> = { ...doc }
-    const result = await api.put<any>(`${LOCAL_VAULT_PREFIX}/doc?id=${encodeURIComponent(doc._id)}`, body)
+    const body: components['schemas']['NoteWrite'] = { ...doc, type: 'note' }
+    const result = await api.put<components['schemas']['NoteWriteResponse']>(`${LOCAL_VAULT_PREFIX}/doc?id=${encodeURIComponent(doc._id)}`, body)
     const data = result?.data || result
     if (data?.rev) doc._rev = data.rev
     remoteSaved = true
   } catch (err) {
     console.warn('[vault] put failed, saved locally:', err)
+    if (typeof err === 'object' && err !== null && 'status' in err && err.status === 409) conflict = err
   }
 
   notesCache.set(doc._id, doc)
@@ -934,6 +945,7 @@ export async function putNote(note: VaultNote): Promise<VaultNote> {
     saveLocalDraft(doc._id, doc.content)
   }
 
+  if (conflict) throw conflict
   return doc
 }
 

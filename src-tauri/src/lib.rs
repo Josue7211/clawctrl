@@ -9,6 +9,7 @@ pub mod gateway_ws;
 pub mod gotrue;
 pub mod harness_paths;
 pub mod logging;
+pub(crate) mod notes_contract;
 pub mod redact;
 pub mod routes;
 pub mod secrets;

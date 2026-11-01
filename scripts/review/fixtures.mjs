@@ -1,15 +1,11 @@
 import { test as base, expect } from '@playwright/test'
 import { writeFile } from 'node:fs/promises'
+import { notesContract, validateNoteSchema, validateNoteExchange } from '../notes-contract.mjs'
 
 export const REVIEW_ORIGIN = 'http://127.0.0.1:5186'
 export const FIXTURE_ORIGIN = 'http://fixture.invalid'
-export const FIXED_TIME = Date.parse('2026-01-15T12:00:00Z')
-export const NOTE = {
-  _id: 'Workspace/Review note.md', _rev: '1-fixture', type: 'note',
-  title: 'Review note', folder: 'Workspace',
-  content: '# Review note\n\nA fixed sample note for feature review.\n',
-  tags: [], links: [], created_at: FIXED_TIME, updated_at: FIXED_TIME,
-}
+export const NOTE = structuredClone(notesContract.components.schemas.NoteDocument.examples[0])
+export const FIXED_TIME = NOTE.created_at
 export const PROJECT = {
   name: 'Review project', path: '/fixture/review-project',
   branches: ['main'], currentBranch: 'main', scripts: [],
@@ -18,7 +14,7 @@ export const PROJECT = {
 export const test = base.extend({
   review: [async ({ context, page }, use, testInfo) => {
     const state = {
-      note: structuredClone(NOTE), failSave: false, failedSaves: 0,
+      note: structuredClone(NOTE), failSave: false, failedSaves: 0, conflicts: 0,
       writes: [], mutations: [], errors: [], warnings: [], forwardedOrigins: [], expectedErrors: [], violations: [], expectedViolations: [], requests: [],
       workspaceGate: null, workspaceRequested: false, workspaceDelivered: false,
     }
@@ -30,7 +26,8 @@ export const test = base.extend({
         const text = message.text()
         const location = message.location().url
         // Injected HTTP 503 responses have browser-generated resource diagnostics.
-        if (state.failedSaves > 0 && location.includes('/api/vault/local/doc?') && /^Failed to load resource:.*503/.test(text)) state.expectedErrors.push(text)
+        if (location.includes('/api/vault/local/doc?') && ((state.failedSaves > 0 && /^Failed to load resource:.*503/.test(text)) || (state.conflicts > 0 && /^Failed to load resource:.*409/.test(text)))) state.expectedErrors.push(text)
+        else if (state.conflicts > 0 && text.startsWith('[notes] autosave failed: ApiError: Note changed; reload its current revision before saving')) state.expectedErrors.push(text)
         else state.errors.push(text)
       })
     }
@@ -56,10 +53,14 @@ export const test = base.extend({
     await context.route('**/*', async route => {
       const request = route.request(), url = new URL(request.url())
       const key = `${request.method()} ${url.pathname}`
-      const json = (body, status = 200) => route.fulfill({ status, json: body, headers: { 'access-control-allow-origin': REVIEW_ORIGIN } })
+      const rawJson = (body, status = 200) => route.fulfill({ status, json: body, headers: { 'access-control-allow-origin': REVIEW_ORIGIN } })
+      const json = (body, status = 200) => {
+        validateNoteExchange(request.method(), url.pathname, status, body)
+        return rawJson(body, status)
+      }
       const block = () => {
         state.violations.push(`${key} at ${url.origin}`)
-        return json({ error: 'Unmodeled review request blocked' })
+        return rawJson({ error: 'Unmodeled review request blocked' })
       }
       if (url.origin === REVIEW_ORIGIN && url.pathname === '/__review_network_probe' && request.method() === 'GET') {
         return route.fulfill({ contentType: 'text/html', body: '<title>Isolated network probe</title>' })
@@ -82,13 +83,20 @@ export const test = base.extend({
       if (key === 'PUT /api/vault/local/doc') {
         const note = request.postDataJSON()
         if (url.searchParams.get('id') !== NOTE._id || note._id !== NOTE._id) return block()
+        validateNoteSchema('NoteWrite', note)
         state.writes.push(structuredClone(note))
         if (state.failSave) {
           state.failedSaves++
-          return json({ error: 'Review fixture: vault save unavailable' }, 503)
+          return json({ ok: false, error: 'Review fixture: vault save unavailable', code: 'service_unavailable' }, 503)
         }
-        state.note = { ...note, _rev: '2-fixture' }
-        return json({ data: { rev: state.note._rev } })
+        if (note._rev !== state.note._rev) {
+          state.conflicts++
+          return json({ ok: false, error: 'Note changed; reload its current revision before saving', code: 'conflict' }, 409)
+        }
+        const nextTime = state.note.updated_at + 1
+        const { content_status, operation_id, ...wireNote } = note
+        state.note = { ...wireNote, updated_at: nextTime, _rev: `local-${nextTime}` }
+        return json({ ok: true, data: { id: state.note._id, rev: state.note._rev } })
       }
       if (['PATCH /api/user-preferences', 'POST /api/vault/local/collaboration/events', 'PUT /api/vault/local/collaboration/crdt-state'].includes(key)) return json({ ok: true })
       if (key === 'POST /api/gateway/events-token') return json({ token: 'fixture-events-token' })
@@ -115,8 +123,8 @@ export const test = base.extend({
         '/api/vault/local/collaboration/crdt-state': { data: { state: null } },
         '/api/status': { status: 'ok', services: [] },
         '/api/approvals': { approvals: [], pending: [] },
-        '/api/vault/local/doc': { data: state.note },
-        '/api/vault/local/documents': { data: { notes: [state.note], attachments: [] } },
+        '/api/vault/local/doc': { ok: true, data: state.note },
+        '/api/vault/local/documents': { ok: true, data: { notes: [state.note], attachments: [] } },
         '/api/vault/local/folders': { data: { folders: [{ path: 'Workspace', name: 'Workspace' }] } },
         '/api/vault/local/sync-ledger': { data: { pending_saves: [], sync_states: [], events: [] } },
         '/api/vault/local/audit': { data: { events: [] } },

@@ -1,0 +1,252 @@
+[
+  {
+    "scenario": "features-Chat-keeps-a-clea-96570-r-a-late-workspace-response",
+    "note": {
+      "_id": "Workspace/Review note.md",
+      "_rev": "local-1768478400000",
+      "type": "note",
+      "title": "Review note",
+      "folder": "Workspace",
+      "content": "# Review note\n\nA fixed sample note for feature review.\n",
+      "tags": [],
+      "links": [],
+      "aliases": [],
+      "properties": {},
+      "created_at": 1768478400000,
+      "updated_at": 1768478400000
+    },
+    "writes": [],
+    "conflicts": 0,
+    "failedSaves": 0,
+    "unexpectedErrors": [],
+    "expectedErrors": [],
+    "warnings": [],
+    "blocked": [],
+    "expectedBlocked": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ]
+  },
+  {
+    "scenario": "features-Network-isolation-d7d52-xternal-HTTP-and-WebSockets",
+    "note": {
+      "_id": "Workspace/Review note.md",
+      "_rev": "local-1768478400000",
+      "type": "note",
+      "title": "Review note",
+      "folder": "Workspace",
+      "content": "# Review note\n\nA fixed sample note for feature review.\n",
+      "tags": [],
+      "links": [],
+      "aliases": [],
+      "properties": {},
+      "created_at": 1768478400000,
+      "updated_at": 1768478400000
+    },
+    "writes": [],
+    "conflicts": 0,
+    "failedSaves": 0,
+    "unexpectedErrors": [],
+    "expectedErrors": [],
+    "warnings": [],
+    "blocked": [
+      "POST /api/unmodeled at http://127.0.0.1:5186",
+      "GET /api/auth/session at https://blocked.invalid",
+      "WebSocket ws://blocked.invalid/unmodeled"
+    ],
+    "expectedBlocked": [
+      "POST /api/unmodeled at http://127.0.0.1:5186",
+      "GET /api/auth/session at https://blocked.invalid",
+      "WebSocket ws://blocked.invalid/unmodeled"
+    ],
+    "forwardedOrigins": []
+  },
+  {
+    "scenario": "features-Notes-preserves-a-4b965-h-a-controlled-save-failure",
+    "note": {
+      "_id": "Workspace/Review note.md",
+      "_rev": "local-1768478400002",
+      "type": "note",
+      "title": "Review note",
+      "content": "# Review note\n\nThis edit survives a failed save. Recovered after reconnect.",
+      "folder": "Workspace",
+      "tags": [],
+      "links": [],
+      "aliases": [],
+      "properties": {},
+      "created_at": 1768478400000,
+      "updated_at": 1768478400002,
+      "trashed_at": null,
+      "trash_origin_path": null
+    },
+    "writes": [
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400000",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nThis edit survives a failed save.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      },
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400000",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nThis edit survives a failed save.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      },
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400000",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nThis edit survives a failed save. Recovered after reconnect.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      },
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400001",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nThis edit survives a failed save. Recovered after reconnect.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      }
+    ],
+    "conflicts": 0,
+    "failedSaves": 2,
+    "unexpectedErrors": [],
+    "expectedErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "warnings": [
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.",
+      "[vault] put failed, saved locally: ApiError: Review fixture: vault save unavailable\n    at request (http://127.0.0.1:5186/src/lib/api.ts:280:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4",
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues."
+    ],
+    "blocked": [],
+    "expectedBlocked": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ]
+  },
+  {
+    "scenario": "features-Notes-retains-a-stale-draft-and-shows-the-conflict",
+    "note": {
+      "_id": "Workspace/Review note.md",
+      "_rev": "local-1768478400001",
+      "type": "note",
+      "title": "Review note",
+      "folder": "Workspace",
+      "content": "# Review note\n\nEdited by another client.",
+      "tags": [],
+      "links": [],
+      "aliases": [],
+      "properties": {},
+      "created_at": 1768478400000,
+      "updated_at": 1768478400001
+    },
+    "writes": [
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400000",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nMy draft must survive this conflict.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      },
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400000",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nMy draft must survive this conflict.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      },
+      {
+        "_id": "Workspace/Review note.md",
+        "_rev": "local-1768478400000",
+        "type": "note",
+        "title": "Review note",
+        "content": "# Review note\n\nMy draft must survive this conflict and restart.",
+        "folder": "Workspace",
+        "tags": [],
+        "links": [],
+        "aliases": [],
+        "properties": {},
+        "created_at": 1768478400000,
+        "updated_at": 1768478400000,
+        "trashed_at": null,
+        "trash_origin_path": null
+      }
+    ],
+    "conflicts": 3,
+    "failedSaves": 0,
+    "unexpectedErrors": [],
+    "expectedErrors": [
+      "Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "[notes] autosave failed: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:280:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4",
+      "Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "[notes] autosave failed: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:280:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4"
+    ],
+    "warnings": [
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.",
+      "[vault] put failed, saved locally: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:280:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4",
+      "[tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.",
+      "[vault] put failed, saved locally: ApiError: Note changed; reload its current revision before saving\n    at request (http://127.0.0.1:5186/src/lib/api.ts:280:19)\n    at async putNote (http://127.0.0.1:5186/src/features/notes/storage/vault.ts:556:18)\n    at async http://127.0.0.1:5186/src/features/notes/storage/useVault.ts:107:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:696:19\n    at async http://127.0.0.1:5186/src/features/notes/useNotesWorkspace.tsx:2715:4"
+    ],
+    "blocked": [],
+    "expectedBlocked": [],
+    "forwardedOrigins": [
+      "http://127.0.0.1:5186"
+    ]
+  }
+]

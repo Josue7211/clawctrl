@@ -858,6 +858,16 @@ async fn write_audit(
     action: &str,
     metadata: Value,
 ) -> Result<(), AppError> {
+    let mut conn = state.db.acquire().await?;
+    write_audit_in(&mut conn, document_id, action, metadata).await
+}
+
+async fn write_audit_in(
+    conn: &mut sqlx::SqliteConnection,
+    document_id: Option<&str>,
+    action: &str,
+    metadata: Value,
+) -> Result<(), AppError> {
     sqlx::query(
         "INSERT INTO vault_audit_log (id, document_id, action, metadata_json, created_at) \
          VALUES (?, ?, ?, ?, ?)",
@@ -867,15 +877,23 @@ async fn write_audit(
     .bind(action)
     .bind(metadata.to_string())
     .bind(now_millis())
-    .execute(&state.db)
+    .execute(&mut *conn)
     .await?;
     Ok(())
 }
 
 async fn update_search_index(state: &AppState, document_id: &str) -> Result<(), AppError> {
+    let mut conn = state.db.acquire().await?;
+    update_search_index_in(&mut conn, document_id).await
+}
+
+async fn update_search_index_in(
+    conn: &mut sqlx::SqliteConnection,
+    document_id: &str,
+) -> Result<(), AppError> {
     sqlx::query("DELETE FROM vault_documents_fts WHERE id = ?")
         .bind(document_id)
-        .execute(&state.db)
+        .execute(&mut *conn)
         .await?;
 
     let Some(row) = sqlx::query(
@@ -884,7 +902,7 @@ async fn update_search_index(state: &AppState, document_id: &str) -> Result<(), 
          WHERE id = ? AND deleted_at IS NULL",
     )
     .bind(document_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&mut *conn)
     .await?
     else {
         return Ok(());
@@ -903,7 +921,7 @@ async fn update_search_index(state: &AppState, document_id: &str) -> Result<(), 
         &row.try_get::<String, _>("aliases_json")?,
     ))
     .bind(row.try_get::<String, _>("folder_path")?)
-    .execute(&state.db)
+    .execute(&mut *conn)
     .await?;
 
     Ok(())
@@ -941,13 +959,23 @@ async fn create_version_with_label(
     reason: &str,
     label: Option<&str>,
 ) -> Result<Option<String>, AppError> {
+    let mut conn = state.db.acquire().await?;
+    create_version_with_label_in(&mut conn, document_id, reason, label).await
+}
+
+async fn create_version_with_label_in(
+    conn: &mut sqlx::SqliteConnection,
+    document_id: &str,
+    reason: &str,
+    label: Option<&str>,
+) -> Result<Option<String>, AppError> {
     let Some(row) = sqlx::query(
         "SELECT id, title, path, kind, content_markdown, content_json, folder_path, \
                 tags_json, links_json, aliases_json, properties_json, checksum \
          FROM vault_documents WHERE id = ? AND deleted_at IS NULL",
     )
     .bind(document_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&mut *conn)
     .await?
     else {
         return Ok(None);
@@ -957,7 +985,7 @@ async fn create_version_with_label(
         "SELECT COALESCE(MAX(version_number), 0) + 1 FROM vault_versions WHERE document_id = ?",
     )
     .bind(document_id)
-    .fetch_one(&state.db)
+    .fetch_one(&mut *conn)
     .await?;
 
     let metadata = json!({
@@ -987,7 +1015,7 @@ async fn create_version_with_label(
     .bind(now_millis())
     .bind(reason)
     .bind(row.try_get::<String, _>("checksum")?)
-    .execute(&state.db)
+    .execute(&mut *conn)
     .await?;
 
     Ok(Some(version_id))
@@ -1012,15 +1040,15 @@ fn autosave_version_due(
         .unwrap_or(true)
 }
 
-async fn create_coalesced_autosave_version(
-    state: &AppState,
+async fn create_coalesced_autosave_version_in(
+    conn: &mut sqlx::SqliteConnection,
     document_id: &str,
 ) -> Result<(), AppError> {
     let Some(current_checksum): Option<String> = sqlx::query_scalar(
         "SELECT checksum FROM vault_documents WHERE id = ? AND deleted_at IS NULL",
     )
     .bind(document_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&mut *conn)
     .await?
     else {
         return Ok(());
@@ -1032,7 +1060,7 @@ async fn create_coalesced_autosave_version(
          LIMIT 1",
     )
     .bind(document_id)
-    .fetch_optional(&state.db)
+    .fetch_optional(&mut *conn)
     .await?;
     let now = now_millis();
     let latest_created_at = latest
@@ -1049,12 +1077,17 @@ async fn create_coalesced_autosave_version(
         latest_created_at,
         latest_checksum.as_deref(),
     ) {
-        create_version(state, document_id, "autosave").await?;
+        create_version_with_label_in(conn, document_id, "autosave", None).await?;
     }
     Ok(())
 }
 
 async fn ensure_folder(state: &AppState, folder: &str) -> Result<(), AppError> {
+    let mut conn = state.db.acquire().await?;
+    ensure_folder_in(&mut conn, folder).await
+}
+
+async fn ensure_folder_in(conn: &mut sqlx::SqliteConnection, folder: &str) -> Result<(), AppError> {
     let folder = normalize_folder_path(folder);
     if folder.is_empty() {
         return Ok(());
@@ -1078,7 +1111,7 @@ async fn ensure_folder(state: &AppState, folder: &str) -> Result<(), AppError> {
         .bind(folder_name(&current))
         .bind(now)
         .bind(now)
-        .execute(&state.db)
+        .execute(&mut *conn)
         .await?;
     }
 
@@ -1198,6 +1231,12 @@ async fn import_document(state: &AppState, doc: &Value) -> Result<bool, AppError
     Ok(true)
 }
 
+#[cfg(test)]
+fn configured_obsidian_vault_paths() -> Vec<PathBuf> {
+    Vec::new()
+}
+
+#[cfg(not(test))]
 fn configured_obsidian_vault_paths() -> Vec<PathBuf> {
     let mut paths = Vec::new();
 
@@ -1902,129 +1941,16 @@ async fn get_document(
     Ok(success_json(row_to_note(&row)?))
 }
 
+#[path = "vault_note_write.rs"]
+mod note_write;
+
 async fn put_document(
     State(state): State<AppState>,
-    RequireAuth(_session): RequireAuth,
+    RequireAuth(session): RequireAuth,
     Query(q): Query<DocQuery>,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, AppError> {
-    if q.id.contains("..") || q.id.starts_with('_') || q.id.contains('\0') {
-        return Err(AppError::BadRequest("Invalid document ID".into()));
-    }
-
-    let now = now_millis();
-    let existing = sqlx::query(
-        "SELECT id, folder_path, trashed_at FROM vault_documents WHERE id = ? AND deleted_at IS NULL",
-    )
-    .bind(&q.id)
-    .fetch_optional(&state.db)
-    .await?;
-    if existing.is_some() {
-        create_coalesced_autosave_version(&state, &q.id).await?;
-    }
-
-    let title = body
-        .get("title")
-        .and_then(Value::as_str)
-        .unwrap_or_else(|| {
-            q.id.trim_end_matches(".md")
-                .rsplit('/')
-                .next()
-                .unwrap_or("Untitled")
-        })
-        .trim();
-    let title = if title.is_empty() { "Untitled" } else { title };
-    let content = body
-        .get("content")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    let folder =
-        if let Some(row) = existing.as_ref() {
-            let trashed_at: Option<i64> = row.try_get("trashed_at")?;
-            if trashed_at.is_some() {
-                row.try_get::<String, _>("folder_path")?
-            } else {
-                normalize_folder_path(body.get("folder").and_then(Value::as_str).unwrap_or_else(
-                    || {
-                        q.id.rsplit_once('/')
-                            .map(|(folder, _)| folder)
-                            .unwrap_or("")
-                    },
-                ))
-            }
-        } else {
-            normalize_folder_path(
-                body.get("folder")
-                    .and_then(Value::as_str)
-                    .unwrap_or_else(|| {
-                        q.id.rsplit_once('/')
-                            .map(|(folder, _)| folder)
-                            .unwrap_or("")
-                    }),
-            )
-        };
-    ensure_folder(&state, &folder).await?;
-
-    let created_at = body
-        .get("created_at")
-        .and_then(Value::as_i64)
-        .unwrap_or(now);
-    let content_checksum = checksum(content);
-
-    sqlx::query(
-        "INSERT INTO vault_documents \
-         (id, path, title, kind, content_markdown, content_json, folder_path, tags_json, links_json, aliases_json, properties_json, created_at, updated_at, checksum) \
-         VALUES (?, ?, ?, 'note', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) \
-         ON CONFLICT(id) DO UPDATE SET \
-            path = excluded.path, \
-            title = excluded.title, \
-            kind = excluded.kind, \
-            content_markdown = excluded.content_markdown, \
-            content_json = excluded.content_json, \
-            folder_path = excluded.folder_path, \
-            tags_json = excluded.tags_json, \
-            links_json = excluded.links_json, \
-            aliases_json = excluded.aliases_json, \
-            properties_json = excluded.properties_json, \
-            updated_at = excluded.updated_at, \
-            deleted_at = NULL, \
-            checksum = excluded.checksum",
-    )
-    .bind(&q.id)
-    .bind(&q.id)
-    .bind(title)
-    .bind(content)
-    .bind(body.get("content_json").map(Value::to_string))
-    .bind(&folder)
-    .bind(json_text(body.get("tags"), json!([])))
-    .bind(json_text(body.get("links"), json!([])))
-    .bind(json_text(body.get("aliases"), json!([])))
-    .bind(json_text(body.get("properties"), json!({})))
-    .bind(created_at)
-    .bind(now)
-    .bind(&content_checksum)
-    .execute(&state.db)
-    .await?;
-
-    update_search_index(&state, &q.id).await?;
-    if existing.is_none() {
-        create_version(&state, &q.id, "create").await?;
-    }
-    write_audit(
-        &state,
-        Some(&q.id),
-        if existing.is_some() {
-            "update"
-        } else {
-            "create"
-        },
-        json!({ "path": q.id, "folder": folder }),
-    )
-    .await?;
-
-    Ok(success_json(
-        json!({ "id": q.id, "rev": format!("local-{now}") }),
-    ))
+    note_write::put(&state, &session, &q.id, body).await
 }
 
 async fn delete_document(
@@ -4883,7 +4809,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/vault/local/documents", get(list_documents))
         .route(
-            "/vault/local/documents/{id}",
+            "/vault/local/documents/:id",
             get(get_document_path).put(put_document_path),
         )
         .route(
@@ -5486,3 +5412,7 @@ mod tests {
         assert!(result.is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "vault_note_contract_tests.rs"]
+mod contract_tests;
