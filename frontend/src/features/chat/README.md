@@ -32,3 +32,10 @@ at a time, keeping the existing route and selection contract. The directory map
 above describes current ownership; Chat has not yet been fully consolidated.
 Execute the next extractions through C01 and C02 in the repository
 [implementation map](../../../../docs/implementation-map.md#desktop-ownership-packages).
+
+## Isolated renderer review
+
+Run `npm run review:features` from the root after the one-time
+`npm run review:install`. The [review guide](../../../../docs/feature-review.md)
+records fixture ownership, network isolation, screenshots, and recordings.
+This is renderer evidence; native platform verification stays separate.

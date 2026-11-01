@@ -11,6 +11,8 @@ const ignoredDirs = new Set([
   '.vite',
   '.vitest',
   '.pytest_cache',
+  'review-results',
+  'review-report',
 ])
 
 const requiredFiles = [

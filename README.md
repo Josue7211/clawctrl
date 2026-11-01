@@ -59,6 +59,11 @@ full command on macOS and Linux. `build` creates the desktop release for the OS
 you are using. See [backend verification](docs/backend-testing.md) for the test
 inventory, environment isolation, opt-in checks, and CI caching.
 
+Use `npm run review:install` once to install Chromium for review, then
+`npm run review:features` to capture isolated Notes/Chat interactions, screenshots,
+recordings, and browser/network diagnostics. CI runs this renderer review in its
+own job and attaches the results to the checks. See [feature review](docs/feature-review.md).
+
 `frontend:dev` remains available for browser diagnostics. The normal development
 entry point is `dev`, so native APIs and the local backend are present.
 

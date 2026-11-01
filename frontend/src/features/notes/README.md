@@ -53,3 +53,10 @@ without connecting to personal services.
   [implementation map](../../../../docs/implementation-map.md#desktop-ownership-packages).
 - Continue the existing feature acceptance work in `docs/notes-parity-roadmap.md`.
   This organization change does not declare all Notes parity complete.
+
+## Isolated renderer review
+
+Run `npm run review:features` from the root after the one-time
+`npm run review:install`. The [review guide](../../../../docs/feature-review.md)
+records fixture ownership, network isolation, screenshots, and recordings.
+This is renderer evidence; native platform verification stays separate.

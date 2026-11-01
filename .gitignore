@@ -41,3 +41,7 @@ coverage/
 .memd/wake-token-metrics.json
 .memd/state/
 .memd/agents/HARNESS_BRIDGES.md
+
+# Isolated browser review output
+review-results/
+review-report/

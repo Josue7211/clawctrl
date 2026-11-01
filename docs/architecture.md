@@ -33,3 +33,11 @@ Run `npm run check:architecture` after structural changes.
 - [Backend verification](backend-testing.md) inventories test dependencies, opt-in live checks, and the CI cache policy.
 - `check:all` builds the frontend before checking its bundle budget, so it works from a clean checkout.
 - Run the affected feature's tests while iterating, then verify the behavior in the running app. Use `npm run check:all` before handing off a completed feature.
+
+## Feature review
+
+`npm run review:features` runs Notes/Chat scenarios through the real React frontend
+in an isolated Chromium context. Fixtures and network routing live only in
+`scripts/review/`; normal builds do not import this transport. CI runs the same
+command in a separate browser-review job and uploads the HTML report, PNGs, WebM
+recordings, and diagnostics, including on failures. See [feature review](feature-review.md).
