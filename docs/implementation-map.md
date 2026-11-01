@@ -5,7 +5,7 @@ feature easier to change. This is the execution backlog. The [feature map](featu
 locates existing code; feature guides describe local contracts; parity documents
 provide detailed capability evidence.
 
-Current active work: **R03 Produce isolated feature review evidence**. R01 and R02 are
+Next work: **R04 Define shared Notes API contracts**. R01, R02, and R03 are
 implemented and verified in their linked PRs; the completion ledger records CI
 and review evidence. The default first iOS workflow is creating, reading, and
 editing a note; quick capture creates a note in the same vault.
@@ -56,8 +56,8 @@ package available; record the exact prerequisite without marking the iOS work do
 | --- | --- | --- | --- |
 | R01 | Protect development sessions | None | Done |
 | R02 | Execute backend tests in CI | None | Done |
-| R03 | Produce isolated feature review evidence | None | Active |
-| R04 | Define shared Notes API contracts | R01, R02 | Planned |
+| R03 | Produce isolated feature review evidence | None | Done |
+| R04 | Define shared Notes API contracts | R01, R02 | Next |
 | R05 | Define mobile connectivity and platform capabilities | R01, R04 | Planned |
 | I01 | Select and prove the native client foundation | R03 | Planned |
 | I02 | Implement the online iPhone Notes workflow | I01, R04, R05 | Planned |
@@ -341,6 +341,7 @@ The agent runs these existing commands from the repository root while working:
 | `npm run test:sessions` | Focused R01 persistence and authentication regressions |
 | `npm run test:backend` | Complete ordinary Rust suite across all targets; serial process-environment fixtures |
 | `npm run check:rust` | Full Rust formatting and correctness/suspicious Clippy gates |
+| `npm run review:features` | Isolated Notes/Chat UI interactions, screenshots, recordings, and network/error diagnostics |
 | `npm run check:all` | Rust checks, the backend/frontend suites, production build, bundle budget, and Rust desktop compilation |
 
 For each package or named slice, record:
@@ -363,7 +364,7 @@ For each package or named slice, record:
 
 | R02 | `47f2e4a`; [draft PR 65](https://github.com/Josue7211/clawctrl/pull/65), stacked on PR 64 | Full local gate and [macOS/Linux CI](https://github.com/Josue7211/clawctrl/actions/runs/41249725389) passed: 722 backend and 4,145 frontend tests per platform, formatting, selected Clippy gates, build/budget/type/architecture/dead-code/Rust checks. Earlier backend failures propagated exit 101. Both platform caches saved. Live browser smoke: zero errors. [Review evidence](reviews/r02-backend-ci.md); [test inventory](backend-testing.md). | Two explicit opt-ins remain separate; style/performance lint warnings remain visible. Cache reuse follows branch/ref scope; warm-run timings unmeasured. No new data migration. R03 is next. |
 
-| R03 | In progress | Three renderer review scenarios passed twice locally: Notes failed-save/reload/re-save, Chat late workspace selection, and network isolation. Full local desktop gate passed: 722 backend and 4,145 frontend tests plus formatting/lint/build/budget/type/architecture checks. CI artifact verification pending. | Final validation and published review evidence pending. |
+| R03 | `342854e`; [draft PR 66](https://github.com/Josue7211/clawctrl/pull/66), stacked on PR 65 | Six local repeat passes with matching Notes/Chat state; [browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41341591283/job/124952756290) passed all three scenarios. [Artifact](https://github.com/Josue7211/clawctrl/actions/runs/41341591283/artifacts/13097333461) downloaded and verified. Full local desktop gate passed (722 backend / 4,145 frontend tests). [Phone-readable reference media/results](reviews/r03-feature-review.md). Production bundle contains no review fixture markers. | Renderer-only; one intentional HTTP 503 diagnostic is classified separately and existing warnings remain visible. Full macOS/Linux CI still running at handoff. Artifacts expire after 14 days; reference media persists. R04 is next. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.
