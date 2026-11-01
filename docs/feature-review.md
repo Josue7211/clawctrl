@@ -21,7 +21,7 @@ Open the generated responsive HTML report locally with `npm run review:report`. 
 | Scenario | Interaction and assertions |
 | --- | --- |
 | Notes save failure | Open a fixed sample note, edit it, inject HTTP 503 for its canonical local-vault PUT, verify the fixture backend still has the original and a recovery draft is stored, reload while failure remains active, verify the edit survives, restore availability and edit again, verify the fixture backend receives the new content and the draft clears |
-| Chat late workspace response | Start with a cached sample project, hold the workspace response, clear the project through the actual selector, release the response, verify the project list populates while selection/storage/URL remain unscoped |
+| Chat late workspace response | Assert the cached sample project is selected, hold the workspace response, clear the project through the actual selector before delivery, release the response, verify the project list populates while selection/storage/URL remain unscoped |
 | Network isolation | Attempt an unmodeled local API mutation, an external HTTP request, and an external WebSocket; verify all are intercepted and match the exact expected rejection list |
 
 The failure scenario reports the browser's intentional HTTP 503 diagnostic separately. **Unexpected console/page errors must be zero.** Existing editor warnings and the expected local-draft warning are recorded, not hidden. Notes currently handles an unavailable canonical write by retaining a browser-local draft; this scenario verifies that behavior rather than claiming a native SQLite save succeeded.

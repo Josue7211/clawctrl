@@ -20,7 +20,7 @@ export const test = base.extend({
     const state = {
       note: structuredClone(NOTE), failSave: false, failedSaves: 0,
       writes: [], mutations: [], errors: [], warnings: [], forwardedOrigins: [], expectedErrors: [], violations: [], expectedViolations: [], requests: [],
-      workspaceGate: null, workspaceRequested: false,
+      workspaceGate: null, workspaceRequested: false, workspaceDelivered: false,
     }
     const observePage = target => {
       target.on('pageerror', error => state.errors.push(error.message))
@@ -29,7 +29,7 @@ export const test = base.extend({
         if (message.type() !== 'error') return
         const text = message.text()
         const location = message.location().url
-        // The injected HTTP 503 has one browser-generated resource diagnostic.
+        // Injected HTTP 503 responses have browser-generated resource diagnostics.
         if (state.failedSaves > 0 && location.includes('/api/vault/local/doc?') && /^Failed to load resource:.*503/.test(text)) state.expectedErrors.push(text)
         else state.errors.push(text)
       })
@@ -97,6 +97,7 @@ export const test = base.extend({
       if (key === 'GET /api/chat/workspace-context') {
         state.workspaceRequested = true
         if (state.workspaceGate) await state.workspaceGate
+        state.workspaceDelivered = true
         return json({ projects: [PROJECT], runtimeModes: ['Work locally'] })
       }
       const reads = {

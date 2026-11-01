@@ -8,8 +8,7 @@
     "forwardedOrigins": [
       "http://127.0.0.1:5186"
     ],
-    "failedSaves": 2,
-    "finalNote": {
+    "note": {
       "_id": "Workspace/Review note.md",
       "_rev": "2-fixture",
       "type": "note",
@@ -24,7 +23,9 @@
       "updated_at": 1768478400000,
       "trashed_at": null,
       "trash_origin_path": null
-    }
+    },
+    "failedSaves": 2,
+    "repeatStateMatched": true
   },
   "Chat": {
     "errors": [],
@@ -33,7 +34,10 @@
     "forwardedOrigins": [
       "http://127.0.0.1:5186"
     ],
-    "failedSaves": 0
+    "selectionBeforeClear": "/fixture/review-project",
+    "clearedBeforeResponse": true,
+    "selectionAfterResponse": "",
+    "repeatStateMatched": true
   },
   "Network guard": {
     "errors": [],
