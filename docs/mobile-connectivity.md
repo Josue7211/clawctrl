@@ -6,10 +6,16 @@ phone storage, durable mobile outbox, and TestFlight delivery remain I01–I04.
 
 ## Ownership and host decision
 
-The vault owner has not been selected. Clawctrl Notes uses host-local SQLite and
+The user selected an **existing Linux host that stays on** as the shared Notes
+owner. The exact machine, OS account and data root still need verification; do not
+assume that a reachable Linux desktop is the intended always-on host.
+
+Clawctrl Notes uses host-local SQLite and
 attachment files; the generic Supabase worker does not replicate these tables.
 Supabase auth and other feature data do not make separate local vaults one shared
-dataset. Preserve and reconcile existing data before selecting a canonical owner.
+dataset. Preserve and reconcile existing data, then prove a backup restore before
+moving the canonical vault to the selected Linux host. This decision does not
+redirect the Mac's local Notes routes or merge existing vaults automatically.
 
 Use the selected owner's existing backend only after verifying its availability
 and data root. Phone access goes offline when that host sleeps, exits the app, or
@@ -26,8 +32,9 @@ Do not run desktop and headless listeners concurrently on the same port or point
 them at different databases while calling them one shared vault. On Linux, the
 owning user's credential-store/session dependencies must also be available.
 Headless mode advertises itself honestly and provides no desktop UI/IPC services.
-An existing always-on Linux host is an option only after explicitly selecting its
-vault ownership and verifying migration/backup recovery; it is not provisioned here.
+For the selected always-on Linux role, verify the headless service's account,
+credential-store dependencies, data root, supervision and restart behavior before
+deployment. No host has been provisioned or reconfigured by this decision.
 
 Existing private networking should be evaluated alongside existing HTTPS ingress;
 neither peer-online status nor a configured hostname proves backend availability.

@@ -7,13 +7,19 @@ provide detailed capability evidence.
 
 Current work: **Q00 Stabilize existing features**. The sync-integrity slice is
 source-verified: no false upload acknowledgments and no deletion of pending changes.
-Next is Career/Growth and cache schema/allowlist compatibility. The
+Linux CI exposed a separate Sidebar timer leak (BUG-010), now being fixed in its
+own slice; Career/Growth and cache schema/allowlist compatibility follow. The
 [bug register](bug-register.md) separates confirmed defects from feature workflows
 that still need verification. Resolve data ownership, provider availability and
 native transport before selecting the iOS foundation. R01–R04 are
 implemented and verified in their linked PRs; the completion ledger records CI
 and review evidence. The default first iOS workflow is creating, reading, and
 editing a note; quick capture creates a note in the same vault.
+
+Host decision: an **existing Linux host that stays on** will own shared Notes.
+The exact host/account/data root, dataset reconciliation, backup restore and
+secure native connection remain to be verified. This does not change Q00's bug
+fixing priority or authorize replacing either existing vault without reconciliation.
 
 ## Working agreement
 
@@ -63,8 +69,8 @@ package available; record the exact prerequisite without marking the iOS work do
 | R02 | Execute backend tests in CI | None | Done |
 | R03 | Produce isolated feature review evidence | None | Done |
 | R04 | Define shared Notes API contracts | R01, R02 | Done |
-| Q00 | Stabilize existing features, beginning with sync integrity | R02, R03 | Active: BUG-001–004 source-verified; next BUG-006/007 schema/allowlist compatibility |
-| R05 | Define mobile connectivity and platform capabilities | R01, R04 | Waiting: vault ownership, provider availability and native/live-path proof |
+| Q00 | Stabilize existing features, beginning with sync integrity | R02, R03 | Active: BUG-010 Sidebar lifecycle follow-up; BUG-001–004 source-verified; next BUG-006/007 |
+| R05 | Define mobile connectivity and platform capabilities | R01, R04 | Waiting: specific always-on Linux host/account/data root, reconciliation/restore and native/live-path proof |
 | I01 | Select and prove the native client foundation | R03, Q00 first slice | Planned: follows stabilization and backend/transport decisions |
 | I02 | Implement the online iPhone Notes workflow | I01, R04, R05 | Planned |
 | I03 | Preserve mobile edits offline and across retries | I02 | Planned |
@@ -344,7 +350,7 @@ backend owners. Live service checks use read-only or disposable targets.
 | Decision | Package | Required outcome |
 | --- | --- | --- |
 | iOS client foundation | I01 | One selected stack, compatible minimum iOS version, and one proven native Notes screen |
-| Backend availability | R05 | Intended existing backend host/mode, secure reachability, sleep/offline behavior, and desktop-only capabilities |
+| Backend availability | R05 | Existing always-on Linux host selected as the role; verify the specific machine/account/data root, recovery, secure reachability, restart/offline behavior and desktop-only capabilities |
 | Note synchronization | R04 and I03 | Canonical IDs, revisions, retry identity, and explicit conflict handling across desktop and mobile |
 | Distribution | D01, D02, I04 | Supported package formats, app identity, credential location, versioning, and verified install/update paths |
 
@@ -391,9 +397,9 @@ For each package or named slice, record:
 
 | R04 | `caf5a55`; [draft PR 67](https://github.com/Josue7211/clawctrl/pull/67), stacked on PR 66 | Final local `npm run check:all` passed: 728 backend / 4,147 frontend tests, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Two Node contract tests plus a deliberate generated-type drift rejection passed. Six real HTTP tests cover revisions, concurrent writes, durable replay/restart/delete, rollback, IDs, and route auth. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41346561908/job/124967889969) passed four scenarios; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41346561908/artifacts/13099711423) was downloaded and verified. [Screenshots, recording, and coverage](reviews/r04-notes-contract.md). | Full [macOS/Linux and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41347008908) at `2e553d6`. Migration 0029 adds retained receipts; [retry, rollback, and audit limitations](../shared/contracts/README.md). Other vault mutations retain existing concurrency behavior. Desktop drafts are local; no remote mobile auth, automatic merge, native iOS client, or mobile outbox yet. R05 is next. |
 
-| R05 connection implementation; live proof waiting | `ea31cde`; [draft PR 68](https://github.com/Josue7211/clawctrl/pull/68), stacked on PR 67 | Final local `npm run check:all` passed: 732 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Four real HTTP security tests use the production authentication stack and disposable SQLite; 50 focused frontend checks and all six browser scenarios passed. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/job/124987662541) passed; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/artifacts/13102236886) was downloaded and verified. [Phone-width screenshots, recordings, results, and limits](reviews/r05-mobile-connectivity.md). | Final [macOS/Linux and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41353620231) at `d16272b`. R05 is **not Done**: establish vault ownership, provider availability, native transport and the real connection path, including revocation, host sleep/offline and reconnect. No host is selected and no infrastructure was provisioned. [Residency, scope, migration, and restore rules](mobile-connectivity.md). Native app/protected phone storage/outbox/TestFlight remain I01–I04; Q00 stabilization now precedes I01. |
+| R05 connection implementation; live proof waiting | `ea31cde`; [draft PR 68](https://github.com/Josue7211/clawctrl/pull/68), stacked on PR 67 | Final local `npm run check:all` passed: 732 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. Four real HTTP security tests use the production authentication stack and disposable SQLite; 50 focused frontend checks and all six browser scenarios passed. [Linux browser CI](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/job/124987662541) passed; its [artifact](https://github.com/Josue7211/clawctrl/actions/runs/41353090929/artifacts/13102236886) was downloaded and verified. [Phone-width screenshots, recordings, results, and limits](reviews/r05-mobile-connectivity.md). | Final [macOS/Linux and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41353620231) at `d16272b`. R05 is **not Done**: establish vault ownership, provider availability, native transport and the real connection path, including revocation, host sleep/offline and reconnect. The user selected an existing always-on Linux host as the role; its exact machine/account/data root and reconciliation/restore remain unverified. No infrastructure was provisioned. [Residency, scope, migration, and restore rules](mobile-connectivity.md). Native app/protected phone storage/outbox/TestFlight remain I01–I04; Q00 stabilization now precedes I01. |
 
-| Q00 first slice: BUG-001–004 | `595e0ca`; [draft PR 69](https://github.com/Josue7211/clawctrl/pull/69), stacked on PR 68 | New regressions failed before the fix: HTTP 403 incorrectly healthy, unsupported/rejected queue entries falsely acknowledged, 1,000 pending entries deleted, and malformed JSON blocking later uploads. Full local `npm run check:all` passed: 736 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. All seven isolated browser scenarios passed, including Settings offline → recovery → offline, with zero unexpected errors or unmodeled requests. [Screenshots, recording, structured results, and limits](reviews/r06-sync-integrity.md). | Source fixes are not deployed. [macOS/Linux and browser CI](https://github.com/Josue7211/clawctrl/pull/69/checks) pending. No schema migration. Historical deleted/falsely acknowledged mutations are not recovered; Career/Growth uploading, cache compatibility, transactional outbox writes and stable pagination remain open. Q00 continues with BUG-006/007; native transport remains BUG-009. |
+| Q00 first slice: BUG-001–004 | `595e0ca`; [draft PR 69](https://github.com/Josue7211/clawctrl/pull/69), stacked on PR 68 | New regressions failed before the fix: HTTP 403 incorrectly healthy, unsupported/rejected queue entries falsely acknowledged, 1,000 pending entries deleted, and malformed JSON blocking later uploads. Full local `npm run check:all` passed: 736 backend / 4,158 frontend tests, two Node contract checks, formatting/selected Clippy/type/architecture/dead-code checks, build/budget and desktop compilation. All seven isolated browser scenarios passed, including Settings offline → recovery → offline, with zero unexpected errors or unmodeled requests. [Screenshots, recording, structured results, and limits](reviews/r06-sync-integrity.md). | Source fixes are not deployed. At `7a41cdc`, [macOS and browser CI passed](https://github.com/Josue7211/clawctrl/actions/runs/41358964626); Linux failed on an uncaught Sidebar timeout after all test assertions passed. [Failure evidence](https://github.com/Josue7211/clawctrl/actions/runs/41358964626/job/125005298660); BUG-010 is a separate Q00 follow-up. No schema migration. Historical deleted/falsely acknowledged mutations are not recovered; Career/Growth uploading, cache compatibility, transactional outbox writes and stable pagination remain open. Q00 continues with BUG-006/007; native transport remains BUG-009. |
 
 Keep the queue and this ledger current. Feature/parity guides retain detailed
 behavior evidence and link back to the corresponding package here.

@@ -16,8 +16,10 @@ and rejected states without storing secrets in browser storage.
 - Rust `routes/mobile.rs`: credential owner, scope guard, capabilities, and Notes
   principal; `vault_note_write.rs` rechecks revocation inside the write transaction.
 
-Vault ownership remains undecided; Supabase does not replicate local Notes tables.
-Resolve data ownership and native transport before choosing a host. See the
+The shared Notes owner will be an existing always-on Linux host. Its exact machine,
+account and data root still need verification, with dataset reconciliation and a
+proven backup restore before migration. Supabase does not replicate local Notes
+tables. Verify native transport before deployment. See the
 [bug register](../../../../docs/bug-register.md) and
 [residency guide](../../../../docs/mobile-connectivity.md).
 Phone access needs the selected host awake and its

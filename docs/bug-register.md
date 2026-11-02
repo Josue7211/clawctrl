@@ -27,6 +27,7 @@ the code behavior; it does not establish that a particular user's data was lost.
 | BUG-007 | P2 · `sync.rs`, cache schema | `cache` is allowlisted, but its local primary key is `(key,user_id)` while generic pull/upsert requires `id`. | Exercise the real cache schema through push/pull, or explicitly remove unsupported replication and document its replacement owner. | Open · Q00 follow-up |
 | BUG-008 | P1 · `sync.rs` | A 500-row page uses a timestamp-only `gt` cursor. Rows sharing the boundary timestamp can be skipped permanently. | More than 500 same-timestamp rows all arrive exactly once logically, including restart between pages; use a stable compound cursor. | Open · Q00 follow-up |
 | BUG-009 | P2 · `tauri.conf.json`, connection transport | Packaged `connect-src` permits self/selected loopback origins, but the device connection screen uses remote HTTPS fetch. Browser fixtures do not apply the packaged policy. | Approved remote Notes transport works in the packaged native client; unrelated destinations and credentials remain restricted. | Open · R05/I01 |
+| BUG-010 | P2 · `components/Sidebar.tsx` | The post-drag click-suppression reset timer outlives Sidebar unmount. Linux CI caught its late React state update after the test window was destroyed. | Unmount after a drag leaves no suppression timer; links work again after the 250 ms suppression window. | Fixed in branch · [Q00 Sidebar lifecycle evidence](reviews/r07-sidebar-lifecycle.md); not deployed |
 
 ## Contracts requiring verification
 
@@ -35,7 +36,7 @@ confirmed feature defects. Define the intended behavior before changing them.
 
 | Area | Evidence and uncertainty | Required check | Package |
 | --- | --- | --- | --- |
-| Notes ownership | Canonical vault tables and attachment files are local. They are not in the generic Supabase sync engine. R04 provides local revision/retry semantics, not replication. | Preserve existing datasets; select ownership; prove revision conflicts, attachments, import and backup restore before promising a shared vault. | R05, Q06, I03 |
+| Notes ownership | The user selected an existing always-on Linux host as the shared Notes owner; its exact machine/account/data root remain unverified. Vault tables and attachments are local, outside generic Supabase sync. | Preserve and reconcile existing datasets; prove backup restore, revision conflicts, attachment behavior and the secure client path before migration. | R05, Q06, I03 |
 | Workflow notes | Local migration uses `content`; direct remote routes use `note`/`applied`. Deployed schema is not fully represented in checked-in migrations. | Compare actual Postgres schema/RLS and test the intended local/remote contract without dropping or overwriting data. | Q00, F07 |
 | Offline authentication | Validated live sessions tolerate transient provider failure; cold debug restore requires online credential verification. | Test the intended offline-start and expired/revoked-session behavior explicitly; preserve the R01 protection boundary. | R01, Q05 |
 | Knowledge fallback | No configured Supabase client permits local fallback; a configured but unreachable client can instead fail. | Decide whether offline reads/writes are supported; test unavailable provider, pending writes and reconnect against that contract. | F07 |
