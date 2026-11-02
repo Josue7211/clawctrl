@@ -37,8 +37,12 @@ only to the local review frontend. The screenshot was visually inspected.
 
 The first local full-gate attempt was interrupted by Mac sleep and produced
 timeouts in unrelated existing UI scenarios. It is not passing evidence. The
-rerun uses temporary process-scoped sleep prevention; no power configuration was
-changed. Final full-gate results, source revision and CI status belong in the
+rerun used temporary process-scoped sleep prevention and passed the full local
+`npm run check:all`: 736 backend tests (two existing opt-ins ignored), 4,160
+frontend tests across 257 files, two Node contract checks, formatting/selected
+Clippy/type/architecture/dead-code checks, production build/budget and desktop
+compilation. No power configuration was changed. [Structured results](r07-results.json),
+source revision and CI status are recorded in the
 [implementation ledger](../implementation-map.md#verification-and-completion-ledger).
 
 This is source/fixture verification, not a live provider or native installation
