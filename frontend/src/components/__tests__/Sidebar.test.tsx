@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 
 const {
   mockMoveItemToCategory,
@@ -290,5 +290,50 @@ describe('Sidebar live category moves', () => {
     homeLab.dispatchEvent(click)
 
     expect(click.defaultPrevented).toBe(true)
+  })
+
+  it('disposes post-drag suppression timers when the sidebar unmounts', () => {
+    vi.useFakeTimers()
+    try {
+      const { unmount } = renderSidebar()
+      const homeLab = screen.getByText('Home Lab').closest('a')!
+      mockElementFromPoint(screen.getByRole('button', { name: 'Homelab' }))
+      fireEvent.pointerDown(homeLab, { button: 0, clientX: 0, clientY: 0 })
+      fireEvent.pointerMove(window, { clientX: 12, clientY: 12 })
+      fireEvent.pointerUp(window, { clientX: 12, clientY: 12 })
+      expect(vi.getTimerCount()).toBeGreaterThan(0)
+
+      unmount()
+      vi.runAllTicks()
+      expect(vi.getTimerCount()).toBe(0)
+      act(() => vi.runAllTimers())
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+
+  it('allows normal clicks after the post-drag suppression window expires', () => {
+    vi.useFakeTimers()
+    try {
+      const { unmount } = renderSidebar()
+      const homeLab = screen.getByText('Home Lab').closest('a')!
+      mockElementFromPoint(screen.getByRole('button', { name: 'Homelab' }))
+      fireEvent.pointerDown(homeLab, { button: 0, clientX: 0, clientY: 0 })
+      fireEvent.pointerMove(window, { clientX: 12, clientY: 12 })
+      fireEvent.pointerUp(window, { clientX: 12, clientY: 12 })
+      const blocked = new MouseEvent('click', { bubbles: true, cancelable: true })
+      homeLab.dispatchEvent(blocked)
+      expect(blocked.defaultPrevented).toBe(true)
+
+      act(() => vi.advanceTimersByTime(250))
+      const allowed = new MouseEvent('click', { bubbles: true, cancelable: true })
+      homeLab.dispatchEvent(allowed)
+      expect(allowed.defaultPrevented).toBe(false)
+      unmount()
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 })

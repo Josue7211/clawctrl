@@ -132,6 +132,7 @@ export default function Sidebar({
   const sidebarDragRef = useRef<SidebarPointerDrag | null>(null)
   const sidebarDropRef = useRef<SidebarDropTarget | null>(null)
   const clickSuppressCleanupsRef = useRef<Array<() => void>>([])
+  const suppressClickTimeoutRef = useRef<number | null>(null)
 
   // External stores
   const headerVisible = useSyncExternalStore(subscribeSidebarSettings, getSidebarHeaderVisible)
@@ -303,6 +304,10 @@ export default function Sidebar({
 
   useEffect(
     () => () => {
+      if (suppressClickTimeoutRef.current !== null) {
+        window.clearTimeout(suppressClickTimeoutRef.current)
+        suppressClickTimeoutRef.current = null
+      }
       const cleanups = [...clickSuppressCleanupsRef.current]
       clickSuppressCleanupsRef.current = []
       for (const cleanup of cleanups) cleanup()
@@ -412,7 +417,13 @@ export default function Sidebar({
         if (current.kind === 'item') {
           suppressNextSidebarClick('item', current.href)
           setSuppressClickHref(current.href)
-          window.setTimeout(() => setSuppressClickHref(null), 250)
+          if (suppressClickTimeoutRef.current !== null) {
+            window.clearTimeout(suppressClickTimeoutRef.current)
+          }
+          suppressClickTimeoutRef.current = window.setTimeout(() => {
+            suppressClickTimeoutRef.current = null
+            setSuppressClickHref(null)
+          }, 250)
           if (drop?.kind === 'item') {
             moveItemToCategory(current.href, drop.catId, drop.index)
           }

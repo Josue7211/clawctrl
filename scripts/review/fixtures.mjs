@@ -142,6 +142,7 @@ export const test = base.extend({
         '/api/setup/status': state.setupStatus ?? { ok: true, pairing_required: false, capabilities: {}, services: Object.fromEntries(['supabase', 'harness', 'agentsecrets', 'memd', 'bluebubbles', 'mac_bridge'].map(name => [name, { configured: false, reachable: false }])) },
         '/api/auth/sync/status': { ready: true, has_cached_key: true, requires_unlock: false, has_synced_services: false, needs_recovery_key: false },
         '/api/user-preferences': { ok: true, data: {} },
+        '/api/todos': { ok: true, data: [] },
         '/api/generated-modules': { modules: [] },
         '/api/cache': { data: [] },
         '/api/hermes/runtime-config': {},
